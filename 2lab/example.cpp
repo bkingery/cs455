@@ -26,15 +26,22 @@ void display ( void )
 	glLoadIdentity();								// Reset The Current Modelview Matrix
 	glColor3f(0,0,1);
   if (drawMode == 0){
-    glColor3f(1,1,1);
-    glTranslatef(-1.5,0.0,-6.0);			// Move Left 1.5 Units And Into The Screen 6.0
-    glBegin(GL_POINTS);						// Drawing Using Points
-      glVertex3f(0.0, 1.0, 0.0);
-      glVertex3f(-1.0,-1.0, 0.0);
-      glVertex3f(1.0,-1.0, 0.0);
-      glVertex3f(0.0, 0.0, 0.0);
-      glVertex3f(2.0,-1.0, 0.0);
-    glEnd();
+	glBegin(GL_POINTS);
+	  for(float theta=0, radius=60.0; radius>1.0; theta+=0.1, radius-=0.3)
+	  {
+		glColor3f(radius/60.0, 0.3, 1-(radius/60.0));
+		glVertex2i(200+radius*cos(theta), 200+radius*sin(theta));
+	  }
+	  glEnd();
+    //glColor3f(1,1,1);
+    //glTranslatef(-1.5,0.0,-6.0);			// Move Left 1.5 Units And Into The Screen 6.0
+    //glBegin(GL_POINTS);						// Drawing Using Points
+    //  glVertex3f(0.0, 1.0, 0.0);
+    //  glVertex3f(-1.0,-1.0, 0.0);
+    //  glVertex3f(1.0,-1.0, 0.0);
+    //  glVertex3f(0.0, 0.0, 0.0);
+    //  glVertex3f(2.0,-1.0, 0.0);
+    //glEnd();
   }
   else if (drawMode == 1){
     glTranslatef(0.0,0.0,-6.0);				// Move Left 1.5 Units And Into The Screen 6.0
