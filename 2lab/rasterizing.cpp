@@ -5,6 +5,10 @@
 #include <GL/glut.h>   		// The GL Utility Toolkit (Glut) Header
 #include <cml/cml.h>
 #include <iostream>
+#include <vector>
+#include <algorithm>
+
+#include <assert.h>
 using namespace std;
 
 // Globals
@@ -15,13 +19,19 @@ bool drawMine;
 int drawMode;
 GLenum pointMode;
 
+// typedefs
+typedef cml::vector4f Color;
+typedef cml::vector2i Point;
+typedef vector<Point> Line;
+
 // Data Structures
 float raster[WIDTH*HIGHT*3];
-cml::vector4f curColor;
-cml::vector4f clearColor;
-cml::vector2i p1;
-cml::vector2i p2;
-cml::vector2i p3;
+
+Color curColor;
+Color clearColor;
+std::vector<Point> savedPoints;
+
+bool pointCompareY(Point p1, Point p2) {return (p1[1] < p2[1]);}
 
 void init ()
 {
@@ -35,12 +45,9 @@ void init ()
   drawMine = false;
   drawMode = 0;
   pointMode = -1;
-  p1 = cml::vector2i(-1,-1);
-  p2 = cml::vector2i(-1,-1);
-  p3 = cml::vecotr2i(-1,-1);
   
-  curColor = cml::vector4f(1,1,1,1);
-  clearColor = cml::vector4f(1,1,1,1);
+  curColor = Color(1,1,1,1);
+  clearColor = Color(1,1,1,1);
 }
 
 /**
@@ -51,6 +58,16 @@ void setPixel(int x, int y, float r, float g, float b)
   raster[((y*WIDTH) + x)*3 + 0] = r;
   raster[((y*WIDTH) + x)*3 + 1] = g;
   raster[((y*WIDTH) + x)*3 + 2] = b;
+}
+
+Color getPixelColor(int x, int y)
+{
+  Color c = Color(0,0,0,1);
+  c[0] = raster[((y*WIDTH) + x)*3 + 0];
+  c[1] = raster[((y*WIDTH) + x)*3 + 1];
+  c[2] = raster[((y*WIDTH) + x)*3 + 2];
+  
+  return c;
 }
 
 /**
@@ -87,41 +104,166 @@ void bk_glBegin(GLenum mode)
 }
 
 /**
- * Saves 2 points for drawing a line
- * return true when 2 points are saved.
+ * Saves n points for drawing 
+ * return true when n or more points are saved.
  */
-bool saveTwoPoints(int x, int y)
+bool savePoints(int x, int y, int n)
 {
-  if (p1[0] == -1)
-  {
-	p1.set(x,y);
+  savedPoints.push_back(Point(x,y));
+  if (savedPoints.size() >= n)
+	return true;
+  else
 	return false;
-  }
-  p2.set(x,y);
-  return true;
 }
 
-bool saveThreePoints(int x, int y)
-{
-  if(p1[0] == -1)
-  {
-	p1.set(x,y);
-	return false;
-  }
-  else if (p2[0] == -1)
-  {
-	p2.set(x,y);
-	return false;
-  }
-  p3.set(x,y);
-  return true;
-}
-
+/**
+ * Clears the saved points
+ */
 void clearSavedPoints()
 {
-  p1.set(-1,-1);
-  p2.set(-1,-1);
-  p3.set(-1,-1);
+  savedPoints.clear();
+  assert (savedPoints.size() == 0);
+}
+
+/**
+ *	Returns the distance between point1 and point2
+ */
+float pointDistance(int x1, int y1, int x2, int y2)
+{
+  return sqrt(pow((x2-x1),2) + pow((y2-y1), 2));
+}
+
+/**
+ * Returns the color interpolation based on 2 colors and a fraction
+ */
+Color colorInterpolation(Color COLOR1, Color COLOR2, float fraction)
+{
+  float INT_TO_FLOAT_CONST = 1.0f / 255.0f;
+  fraction = min(fraction, 1.0f);
+  fraction = max(fraction, 0.0f);
+  
+  float RED1 = COLOR1[0] * INT_TO_FLOAT_CONST;
+  float GREEN1 = COLOR1[1] * INT_TO_FLOAT_CONST;
+  float BLUE1 = COLOR1[2] * INT_TO_FLOAT_CONST;
+  float ALPHA1 = COLOR1[3] * INT_TO_FLOAT_CONST;
+
+  float RED2 = COLOR2[0] * INT_TO_FLOAT_CONST;
+  float GREEN2 = COLOR2[1] * INT_TO_FLOAT_CONST;
+  float BLUE2 = COLOR2[2] * INT_TO_FLOAT_CONST;
+  float ALPHA2 = COLOR2[3] * INT_TO_FLOAT_CONST;
+
+  float DELTA_RED = RED2 - RED1;
+  float DELTA_GREEN = GREEN2 - GREEN1;
+  float DELTA_BLUE = BLUE2 - BLUE1;
+  float DELTA_ALPHA = ALPHA2 - ALPHA1;
+
+  float red = RED1 + (DELTA_RED * fraction);
+  float green = GREEN1 + (DELTA_GREEN * fraction);
+  float blue = BLUE1 + (DELTA_BLUE * fraction);
+  float alpha = ALPHA1 + (DELTA_ALPHA * fraction);
+
+  red = min(red, 1.0f);
+  red = max(red, 0.0f);
+  green = min(green, 1.0f);
+  green = max(green, 0.0f);
+  blue = min(blue, 1.0f);
+  blue = max(blue, 0.0f);
+  alpha = min(alpha, 1.0f);
+  alpha = max(alpha, 0.0f);
+
+  return Color(red*255.0f, green*255.0f, blue*255.0f, alpha*255.0f);
+}
+
+/**
+ * Draws a line with interpolated colors
+ */
+Line drawLine(int x1, int y1, int x2, int y2)
+{
+  Line line;
+  
+  float dy = y2 - y1;
+  float dx = x2 - x1;
+  float m,b;
+  
+  Color cStart = getPixelColor(x1, y1);
+  Color cEnd = getPixelColor(x2, y2);
+  int xStart = x1;
+  int yStart = y1;
+  int xEnd = x2;
+  int yEnd = y2;
+
+  if (fabs(dx) > fabs(dy))						// slope < 1
+  {
+	  m = dy / dx;								// compute slope
+	  b = y1 - m*(float)x1;
+	  dx = (dx > 0) ? 1 : -1;					// determine direction
+	  while (x1 != x2)
+	  {	
+		  x1 += dx;								// increment x
+		  float ys = (m*(float)x1+b);
+		  float d1 = pointDistance(xStart, yStart, x1, ys);
+		  float d2 = pointDistance(xStart, yStart, x2, y2);
+		  Color c = colorInterpolation(cStart, cEnd, d1/d2);
+		  setPixel(x1, ys, c[0], c[1], c[2]);
+		  line.push_back(Point(x1,ys));
+	  }
+  }
+  else 											// slope >=1
+  {
+	  m = dy / dx;								// compute slope
+	  b = y1 - m*(float)x1;
+	  dy = (dy > 0) ? 1 : -1;					// determine direction
+	  while (y1 != y2)
+	  {
+		  y1 += dy;								// increment y
+		  x1 = (dx !=0) ? (((float)y1-b)/m) : x1;	// make sure dx != 0
+		  float d1 = pointDistance(xStart, yStart, x1, y1);
+		  float d2 = pointDistance(xStart, yStart, x2, y2);
+		  Color c = colorInterpolation(cStart, cEnd, d1/d2);
+		  setPixel(x1, y1, c[0], c[1], c[2]);
+		  line.push_back(Point(x1,y1));
+	  }
+  }
+  
+  return line;
+}
+
+/**
+ * Draws a smooth shaded triangle
+ */
+void drawTriangle(Point p1, Point p2, Point p3)
+{
+  Line l1 = drawLine(p1[0], p1[1], p2[0], p2[1]);
+  Line l2 = drawLine(p2[0], p2[1], p3[0], p3[1]);
+  Line l3 = drawLine(p3[0], p3[1], p1[0], p1[1]);
+  
+  l1.insert(l1.begin(), l2.begin(), l2.end());
+  l1.insert(l1.begin(), l3.begin(), l3.end());
+  
+  sort(l1.begin(), l1.end(), pointCompareY);
+  
+  vector<Point> xmins;
+  vector<Point> ymaxs;
+  
+  int curY = l1[0][1];
+  int curXmin = l1[0][0];
+  int curXmax = l1[0][0];
+  for (Line::iterator it = l1.begin(); it != l1.end(); ++it)
+  {
+	Point p = *it;
+	if (p[1] == curY)
+	{
+	  curXmin = (p[0] < curXmin) ? p[0] : curXmin;
+	  curXmax = (p[0] > curXmax) ? p[0] : curXmax;
+	}
+	else
+	{
+	  drawLine(curXmin, curY, curXmax, curY);
+	  curY = p[1];
+	  curXmin = p[0];
+	  curXmax = p[0];
+	}
+  }
 }
 
 /**
@@ -135,29 +277,36 @@ void bk_glVertex2i(int x, int y)
 {
   glVertex2i(x,y);
   
+  setPixel(x,y, curColor[0], curColor[1], curColor[2]);
+  
   switch (pointMode)
   {
 	case GL_POINTS:
-	  setPixel(x,y, curColor[0], curColor[1], curColor[2]);
+	  //setPixel(x,y, curColor[0], curColor[1], curColor[2]);
 	  break;
 	case GL_LINES:
-	  if (saveTwoPoints(x,y))
+	  if (savePoints(x,y,2))
 	  {
-		//TODO drawLine
+		Point p1 = savedPoints[0];
+		Point p2 = savedPoints[1];
+		drawLine(p1[0], p1[1], p2[0], p2[1]);
 		clearSavedPoints();
 	  }
 	  break;
 	case GL_TRIANGLES:
-	  if (saveThreePoints(x,y))
+	  if (savePoints(x,y,3))
 	  {
-		//TODO draw triangle
+		Point p1 = savedPoints[0];
+		Point p2 = savedPoints[1];
+		Point p3 = savedPoints[2];
+		drawTriangle(p1, p2, p3);
 		clearSavedPoints();
 	  }
 	  break;
 	default:
+	  //TODO begin must be called
 	  break;
   }
-  //TODO begin must be called
   return;
 }
 
