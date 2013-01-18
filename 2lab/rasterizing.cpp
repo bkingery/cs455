@@ -15,18 +15,19 @@ using namespace std;
 #define HIGHT 480
 #define WIDTH 640
 
-bool drawMine;
-int drawMode;
-GLenum pointMode;
-
 // typedefs
 typedef cml::vector4f Color;
 typedef cml::vector2i Point;
 typedef vector<Point> Line;
 
+bool drawMine;
+int drawMode;
+int lineWidth;
+GLenum pointMode;
+Point firstPoint;
+
 // Data Structures
 float raster[WIDTH*HIGHT*3];
-
 Color curColor;
 Color clearColor;
 std::vector<Point> savedPoints;
@@ -45,6 +46,7 @@ void init ()
   drawMine = false;
   drawMode = 0;
   pointMode = -1;
+  firstPoint = Point(-1,-1);
   
   curColor = Color(1,1,1,1);
   clearColor = Color(1,1,1,1);
@@ -94,16 +96,6 @@ void bk_glClear(GLint bit)
 }
 
 /**
- * This tells you how to interpret points.
- * with parameters GL_POINTS, GL_LINES, and GL_TRIANGLES
- */
-void bk_glBegin(GLenum mode)
-{
-  glBegin(mode);
-  pointMode = mode;
-}
-
-/**
  * Saves n points for drawing 
  * return true when n or more points are saved.
  */
@@ -123,6 +115,18 @@ void clearSavedPoints()
 {
   savedPoints.clear();
   assert (savedPoints.size() == 0);
+}
+
+/**
+ * This tells you how to interpret points.
+ * with parameters GL_POINTS, GL_LINES, and GL_TRIANGLES
+ */
+void bk_glBegin(GLenum mode)
+{
+  glBegin(mode);
+  pointMode = mode;
+  firstPoint.set(-1, -1);
+  clearSavedPoints();
 }
 
 /**
@@ -204,7 +208,23 @@ Line drawLine(int x1, int y1, int x2, int y2)
 		  float d1 = pointDistance(xStart, yStart, x1, ys);
 		  float d2 = pointDistance(xStart, yStart, x2, y2);
 		  Color c = colorInterpolation(cStart, cEnd, d1/d2);
-		  setPixel(x1, ys, c[0], c[1], c[2]);
+		  
+		  if (y1 == y2)
+		  {
+			for (int i=0; i<=lineWidth/2; i++)
+			{
+			  setPixel(x1, ys+i, c[0], c[1], c[2]);
+			  setPixel(x1, ys-i, c[0], c[1], c[2]);
+			}
+		  }
+		  else
+		  {
+			for (int i=0; i<=lineWidth/2; i++)
+			{
+			  setPixel(x1+i, ys, c[0], c[1], c[2]);
+			  setPixel(x1-i, ys, c[0], c[1], c[2]);
+			}
+		  }
 		  line.push_back(Point(x1,ys));
 	  }
   }
@@ -220,7 +240,11 @@ Line drawLine(int x1, int y1, int x2, int y2)
 		  float d1 = pointDistance(xStart, yStart, x1, y1);
 		  float d2 = pointDistance(xStart, yStart, x2, y2);
 		  Color c = colorInterpolation(cStart, cEnd, d1/d2);
-		  setPixel(x1, y1, c[0], c[1], c[2]);
+		  for (int i=0; i<=lineWidth/2; i++)
+		  {
+			setPixel(x1+i, y1, c[0], c[1], c[2]);
+			setPixel(x1-i, y1, c[0], c[1], c[2]);
+		  }
 		  line.push_back(Point(x1,y1));
 	  }
   }
@@ -266,6 +290,61 @@ void drawTriangle(Point p1, Point p2, Point p3)
   }
 }
 
+void drawQuad(Point p1, Point p2, Point p3, Point p4)
+{
+  Line l1 = drawLine(p1[0], p1[1], p2[0], p2[1]);
+  Line l2 = drawLine(p2[0], p2[1], p3[0], p3[1]);
+  Line l3 = drawLine(p3[0], p3[1], p4[0], p4[1]);
+  Line l4 = drawLine(p4[0], p4[1], p1[0], p1[1]);
+  
+  l1.insert(l1.begin(), l2.begin(), l2.end());
+  l1.insert(l1.begin(), l3.begin(), l3.end());
+  l1.insert(l1.begin(), l4.begin(), l4.end());
+  
+  sort(l1.begin(), l1.end(), pointCompareY);
+  
+  vector<Point> xmins;
+  vector<Point> ymaxs;
+  
+  int curY = l1[0][1];
+  int curXmin = l1[0][0];
+  int curXmax = l1[0][0];
+  for (Line::iterator it = l1.begin(); it != l1.end(); ++it)
+  {
+	Point p = *it;
+	if (p[1] == curY)
+	{
+	  curXmin = (p[0] < curXmin) ? p[0] : curXmin;
+	  curXmax = (p[0] > curXmax) ? p[0] : curXmax;
+	}
+	else
+	{
+	  drawLine(curXmin, curY, curXmax, curY);
+	  curY = p[1];
+	  curXmin = p[0];
+	  curXmax = p[0];
+	}
+  }
+}
+
+/**
+ * Draws a line strip and saves the last point
+ */
+void drawStrip(int x, int y)
+{
+  if (firstPoint[0] == -1)
+	firstPoint.set(x,y);
+	
+  if (savePoints(x,y,2))
+  {
+	Point p1 = savedPoints[0];
+	Point p2 = savedPoints[1];
+	drawLine(p1[0], p1[1], p2[0], p2[1]);
+	clearSavedPoints();
+	savePoints(x,y,2);
+  }
+}
+
 /**
  * glVertex specifies a point for drawing, though how it is drawn depends
  * on the mode specified by glBegin.
@@ -303,6 +382,61 @@ void bk_glVertex2i(int x, int y)
 		clearSavedPoints();
 	  }
 	  break;
+	case GL_LINE_STRIP:
+	  drawStrip(x,y);
+	  break;
+	case GL_LINE_LOOP:
+	  drawStrip(x,y);
+	  break;
+	case GL_TRIANGLE_STRIP:
+	  if (savePoints(x,y,3))
+	  {
+		Point p1 = savedPoints[0];
+		Point p2 = savedPoints[1];
+		Point p3 = savedPoints[2];
+		drawTriangle(p1, p2, p3);
+		clearSavedPoints();
+		savePoints(p2[0],p2[1],3);
+		savePoints(p3[0],p3[1],3);
+	  }
+	  break;
+	case GL_POLYGON:
+	case GL_TRIANGLE_FAN:
+	  if (savePoints(x,y,3))
+	  {
+		Point p1 = savedPoints[0];
+		Point p2 = savedPoints[1];
+		Point p3 = savedPoints[2];
+		drawTriangle(p1, p2, p3);
+		clearSavedPoints();
+		savePoints(p1[0],p1[1],3);
+		savePoints(p3[0],p3[1],3);
+	  }
+	  break;
+	case GL_QUADS:
+	  if (savePoints(x,y,4))
+	  {
+		Point p1 = savedPoints[0];
+		Point p2 = savedPoints[1];
+		Point p3 = savedPoints[2];
+		Point p4 = savedPoints[3];
+		drawQuad(p1, p2, p3, p4);
+		clearSavedPoints();
+	  }
+	  break;
+	case GL_QUAD_STRIP:
+	  if (savePoints(x,y,4))
+	  {
+		Point p1 = savedPoints[0];
+		Point p2 = savedPoints[1];
+		Point p3 = savedPoints[2];
+		Point p4 = savedPoints[3];
+		drawQuad(p1, p2, p4, p3);
+		clearSavedPoints();
+		savePoints(p3[0],p3[1],3);
+		savePoints(p4[0],p4[1],3);
+	  }
+	  break;
 	default:
 	  //TODO begin must be called
 	  break;
@@ -317,7 +451,16 @@ void bk_glVertex2i(int x, int y)
 void bk_glEnd()
 {
   glEnd();
+  switch (pointMode)
+  {
+	case GL_LINE_LOOP:
+	  drawStrip(firstPoint[0], firstPoint[1]);
+	  break;
+	default:
+	  break;
+  }
   pointMode = -1;
+  clearSavedPoints();
 }
 
 /**
@@ -328,6 +471,12 @@ void bk_glColor3f(float r, float g, float b)
 {
   glColor3f(r,g,b);
   curColor.set(r,g,b,1);
+}
+
+void bk_glLineWidth(int w)
+{
+  glLineWidth(w);
+  lineWidth = w;
 }
 
 /**
@@ -384,8 +533,178 @@ void draw()
 	  bk_glEnd();
 	  break;
 	case 3:
+	  bk_glBegin(GL_LINE_STRIP);
+		bk_glColor3f(0.42,0.27,0.11);
+		bk_glVertex2i(250,30);
+		bk_glVertex2i(270,60);
+		bk_glVertex2i(270,210);
+		bk_glColor3f(0.04,0.70,0.02);
+		bk_glVertex2i(230,230);
+		bk_glVertex2i(220,270);
+		bk_glVertex2i(220,310);
+		bk_glVertex2i(250,340);
+		bk_glVertex2i(275,360);
+		bk_glVertex2i(325,360);
+		bk_glVertex2i(350,340);
+		bk_glVertex2i(380,310);
+		bk_glVertex2i(380,270);
+		bk_glVertex2i(370,230);
+		bk_glColor3f(0.42,0.27,0.11);
+		bk_glVertex2i(330,210);
+		bk_glVertex2i(330,60);
+		bk_glVertex2i(350,30);
+	  glEnd();
 	  break;
 	case 4:
+	  bk_glBegin(GL_LINE_LOOP);
+		bk_glColor3f(0.42,0.27,0.11);
+		bk_glVertex2i(250,30);
+		bk_glVertex2i(270,60);
+		bk_glVertex2i(270,210);
+		bk_glColor3f(0.04,0.70,0.02);
+		bk_glVertex2i(230,230);
+		bk_glVertex2i(220,270);
+		bk_glVertex2i(220,310);
+		bk_glVertex2i(250,340);
+		bk_glVertex2i(275,360);
+		bk_glVertex2i(325,360);
+		bk_glVertex2i(350,340);
+		bk_glVertex2i(380,310);
+		bk_glVertex2i(380,270);
+		bk_glVertex2i(370,230);
+		bk_glColor3f(0.42,0.27,0.11);
+		bk_glVertex2i(330,210);
+		bk_glVertex2i(330,60);
+		bk_glVertex2i(350,30);
+	  bk_glEnd();
+	  break;
+	case 5:
+	  bk_glBegin(GL_TRIANGLE_STRIP);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(40,70);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(40,390);
+		bk_glColor3f(1,1,0);
+		bk_glVertex2i(130,30);
+		bk_glColor3f(0,0,1);
+		bk_glVertex2i(130,350);
+		bk_glColor3f(1,0,1);
+		bk_glVertex2i(330,80);
+		bk_glColor3f(0,1,1);
+		bk_glVertex2i(330,400);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(480,40);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(530,330);
+	  bk_glEnd();
+	  break;
+	case 6:
+	  bk_glBegin(GL_TRIANGLE_FAN);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(250,170);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(400,140);
+		bk_glColor3f(1,1,0);
+		bk_glVertex2i(300,50);
+		bk_glColor3f(0,0,1);
+		bk_glVertex2i(175,55);
+		bk_glColor3f(1,0,1);
+		bk_glVertex2i(100,170);
+		bk_glColor3f(0,1,1);
+		bk_glVertex2i(175,285);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(300,290);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(400,200);
+	  bk_glEnd();
+	  break;
+	case 7:
+	  bk_glBegin(GL_QUADS);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(40,70);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(40,390);
+		bk_glColor3f(0,0,1);
+		bk_glVertex2i(130,350);
+		bk_glColor3f(1,1,0);
+		bk_glVertex2i(130,30);
+		bk_glColor3f(1,0,1);
+		bk_glVertex2i(330,80);
+		bk_glColor3f(0,1,1);
+		bk_glVertex2i(330,400);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(530,330);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(480,40);
+	  bk_glEnd();
+	  break;
+	case 8:
+	  bk_glBegin(GL_QUAD_STRIP);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(40,70);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(40,390);
+		bk_glColor3f(1,1,0);
+		bk_glVertex2i(130,30);
+		bk_glColor3f(0,0,1);
+		bk_glVertex2i(130,350);
+		bk_glColor3f(1,0,1);
+		bk_glVertex2i(330,80);
+		bk_glColor3f(0,1,1);
+		bk_glVertex2i(330,400);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(480,40);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(530,330);
+	  bk_glEnd();
+	  break;
+	case 9:
+	  bk_glBegin(GL_POLYGON);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(250,170);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(400,140);
+		bk_glColor3f(1,1,0);
+		bk_glVertex2i(300,50);
+		bk_glColor3f(0,0,1);
+		bk_glVertex2i(175,55);
+		bk_glColor3f(1,0,1);
+		bk_glVertex2i(100,170);
+		bk_glColor3f(0,1,1);
+		bk_glVertex2i(175,285);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(300,290);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(400,200);
+	  bk_glEnd();
+	  break;
+	case 10:
+	  bk_glLineWidth(5);
+	  bk_glBegin(GL_LINES);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(200,270);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(225,300);
+		bk_glVertex2i(225,300);
+		bk_glColor3f(1,1,0);
+		bk_glVertex2i(255,300);
+		bk_glVertex2i(255,300);
+		bk_glColor3f(0,0,1);
+		bk_glVertex2i(280,270);
+		bk_glVertex2i(280,270);
+		bk_glColor3f(1,0,1);
+		bk_glVertex2i(280,230);
+		bk_glVertex2i(280,230);
+		bk_glColor3f(0,1,1);
+		bk_glVertex2i(240,190);
+		bk_glVertex2i(240,190);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(240,160);
+		bk_glVertex2i(240,150);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(240,145);
+	  bk_glEnd();
+	  bk_glLineWidth(1);
 	  break;
 	default:
 	  break;
@@ -471,11 +790,11 @@ void arrow_keys ( int a_keys, int x, int y )
   switch (a_keys)
   {
     case GLUT_KEY_UP:     				// When Up Arrow Is Pressed...
-      drawMode = (drawMode+1)%5;
+      drawMode = (drawMode+1)%11;
       display();
       break;
     case GLUT_KEY_DOWN:               	// When Down Arrow Is Pressed...
-      if ((drawMode=drawMode-1) < 0) drawMode=4;
+      if ((drawMode=drawMode-1) < 0) drawMode=10;
       display();
       break;
     default:
