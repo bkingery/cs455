@@ -92,6 +92,7 @@ void bk_glClear(GLint bit)
   for (int x=0; x<WIDTH; x++)
 	for (int y=0; y<HIGHT; y++)
 	  setPixel(x,y, clearColor[0], clearColor[1], clearColor[2]);
+	  //setPixel(x,y, 1, 1, 1);
   return;
 }
 
@@ -178,6 +179,14 @@ Color colorInterpolation(Color COLOR1, Color COLOR2, float fraction)
   return Color(red*255.0f, green*255.0f, blue*255.0f, alpha*255.0f);
 }
 
+bool isClearColor(Color c)
+{
+  if (c[0] == clearColor[0] && c[1] == clearColor[1] && c[2] == clearColor[2])
+	return true;
+  else
+	return false;
+}
+
 /**
  * Draws a line with interpolated colors
  */
@@ -187,69 +196,103 @@ Line drawLine(int x1, int y1, int x2, int y2)
   
   float dy = y2 - y1;
   float dx = x2 - x1;
-  float m,b;
+  float m = dy / dx;			// slope
+  float b = y1 - m*(float)x1;	// intercept
   
   Color cStart = getPixelColor(x1, y1);
   Color cEnd = getPixelColor(x2, y2);
+  assert(!isClearColor(cStart));
+  assert(!isClearColor(cEnd));
+  
   int xStart = x1;
   int yStart = y1;
   int xEnd = x2;
   int yEnd = y2;
+  
+  float d1, d2;	// distances used for color interpolation
 
-  if (fabs(dx) > fabs(dy))						// slope < 1
+  if (fabs(dx) > fabs(dy))					// slope < 1
   {
-	  m = dy / dx;								// compute slope
-	  b = y1 - m*(float)x1;
-	  dx = (dx > 0) ? 1 : -1;					// determine direction
-	  while (x1 != x2)
-	  {	
-		  x1 += dx;								// increment x
-		  float ys = (m*(float)x1+b);
-		  float d1 = pointDistance(xStart, yStart, x1, ys);
-		  float d2 = pointDistance(xStart, yStart, x2, y2);
-		  Color c = colorInterpolation(cStart, cEnd, d1/d2);
-		  
-		  if (y1 == y2)
-		  {
-			for (int i=0; i<=lineWidth/2; i++)
-			{
-			  setPixel(x1, ys+i, c[0], c[1], c[2]);
-			  setPixel(x1, ys-i, c[0], c[1], c[2]);
-			}
-		  }
-		  else
-		  {
-			for (int i=0; i<=lineWidth/2; i++)
-			{
-			  setPixel(x1+i, ys, c[0], c[1], c[2]);
-			  setPixel(x1-i, ys, c[0], c[1], c[2]);
-			}
-		  }
-		  line.push_back(Point(x1,ys));
-	  }
-  }
-  else 											// slope >=1
-  {
-	  m = dy / dx;								// compute slope
-	  b = y1 - m*(float)x1;
-	  dy = (dy > 0) ? 1 : -1;					// determine direction
-	  while (y1 != y2)
+	float ys;
+	dx = (dx > 0) ? 1 : -1;							// determine direction
+	while (x1 != x2)
+	{
+	  x1 += dx;										// increment x
+	  ys = (m*(float)x1+b)+0.5;						// +0.5 for rounding
+	  d1 = pointDistance(xStart, yStart, x1, ys);
+	  d2 = pointDistance(xStart, yStart, x2, y2);
+	  Color c = colorInterpolation(cStart, cEnd, d1/d2);
+	  assert(!isClearColor(c));
+	  if (y1 == y2)
 	  {
-		  y1 += dy;								// increment y
-		  x1 = (dx !=0) ? (((float)y1-b)/m) : x1;	// make sure dx != 0
-		  float d1 = pointDistance(xStart, yStart, x1, y1);
-		  float d2 = pointDistance(xStart, yStart, x2, y2);
-		  Color c = colorInterpolation(cStart, cEnd, d1/d2);
-		  for (int i=0; i<=lineWidth/2; i++)
-		  {
-			setPixel(x1+i, y1, c[0], c[1], c[2]);
-			setPixel(x1-i, y1, c[0], c[1], c[2]);
-		  }
-		  line.push_back(Point(x1,y1));
+		for (int i=0; i<=lineWidth/2; i++)
+		{
+		  setPixel(x1, ys+i, c[0], c[1], c[2]);
+		  setPixel(x1, ys-i, c[0], c[1], c[2]);
+		}
 	  }
+	  else
+	  {
+		for (int i=0; i<=lineWidth/2; i++)
+		{
+		  setPixel(x1+i, ys, c[0], c[1], c[2]);
+		  setPixel(x1-i, ys, c[0], c[1], c[2]);
+		}
+	  }
+	  line.push_back(Point(x1,ys));
+	}
+  }
+  else 												// slope >=1
+  {
+	dy = (dy > 0) ? 1 : -1;							// determine direction
+	while (y1 != y2)
+	{
+	  y1 += dy;										// increment y
+	  x1 = (dx !=0) ? (((float)y1-b)/m)+0.5 : x1;	// make sure dx != 0
+	  d1 = pointDistance(xStart, yStart, x1, y1);
+	  d2 = pointDistance(xStart, yStart, x2, y2);
+	  Color c = colorInterpolation(cStart, cEnd, d1/d2);
+	  assert(!isClearColor(c));
+	  for (int i=0; i<=lineWidth/2; i++)
+	  {
+		setPixel(x1+i, y1, c[0], c[1], c[2]);
+		setPixel(x1-i, y1, c[0], c[1], c[2]);
+	  }
+	  line.push_back(Point(x1,y1));
+	}
   }
   
   return line;
+}
+
+/**
+ * Fills a polygon
+ * @precondition : l is a list of sorted points (on y) defining the outline
+ */
+void fillPolygon(Line l)
+{
+  int curY = l[0][1];
+  int curXmin = l[0][0];
+  int curXmax = l[0][0];
+  for (Line::iterator it = l.begin(); it != l.end(); ++it)
+  {
+	Point p = *it;
+	if (p[1] == curY)
+	{
+	  curXmin = (p[0] < curXmin) ? p[0] : curXmin;
+	  curXmax = (p[0] > curXmax) ? p[0] : curXmax;
+	}
+	else
+	{
+	  drawLine(curXmin, curY, curXmax, curY);
+	  //cout << curXmin << " , " << curXmax << " , " << curY << endl;
+	  curY = p[1];
+	  curXmin = p[0];
+	  curXmax = p[0];
+	}
+  }
+  drawLine(curXmin, curY, curXmax, curY);	// Just in case no change in y
+  //cout << "\n************************\n" << endl;
 }
 
 /**
@@ -261,33 +304,12 @@ void drawTriangle(Point p1, Point p2, Point p3)
   Line l2 = drawLine(p2[0], p2[1], p3[0], p3[1]);
   Line l3 = drawLine(p3[0], p3[1], p1[0], p1[1]);
   
-  l1.insert(l1.begin(), l2.begin(), l2.end());
-  l1.insert(l1.begin(), l3.begin(), l3.end());
+  l1.insert(l1.end(), l2.begin(), l2.end());
+  l1.insert(l1.end(), l3.begin(), l3.end());
   
   sort(l1.begin(), l1.end(), pointCompareY);
   
-  vector<Point> xmins;
-  vector<Point> ymaxs;
-  
-  int curY = l1[0][1];
-  int curXmin = l1[0][0];
-  int curXmax = l1[0][0];
-  for (Line::iterator it = l1.begin(); it != l1.end(); ++it)
-  {
-	Point p = *it;
-	if (p[1] == curY)
-	{
-	  curXmin = (p[0] < curXmin) ? p[0] : curXmin;
-	  curXmax = (p[0] > curXmax) ? p[0] : curXmax;
-	}
-	else
-	{
-	  drawLine(curXmin, curY, curXmax, curY);
-	  curY = p[1];
-	  curXmin = p[0];
-	  curXmax = p[0];
-	}
-  }
+  fillPolygon(l1);
 }
 
 void drawQuad(Point p1, Point p2, Point p3, Point p4)
@@ -303,28 +325,7 @@ void drawQuad(Point p1, Point p2, Point p3, Point p4)
   
   sort(l1.begin(), l1.end(), pointCompareY);
   
-  vector<Point> xmins;
-  vector<Point> ymaxs;
-  
-  int curY = l1[0][1];
-  int curXmin = l1[0][0];
-  int curXmax = l1[0][0];
-  for (Line::iterator it = l1.begin(); it != l1.end(); ++it)
-  {
-	Point p = *it;
-	if (p[1] == curY)
-	{
-	  curXmin = (p[0] < curXmin) ? p[0] : curXmin;
-	  curXmax = (p[0] > curXmax) ? p[0] : curXmax;
-	}
-	else
-	{
-	  drawLine(curXmin, curY, curXmax, curY);
-	  curY = p[1];
-	  curXmin = p[0];
-	  curXmax = p[0];
-	}
-  }
+  fillPolygon(l1);
 }
 
 /**
@@ -518,18 +519,18 @@ void draw()
 	  break;
 	case 2:
 	  bk_glBegin(GL_TRIANGLES);
-	  bk_glColor3f(1,0,0);
-	  bk_glVertex2i(300,300);
-	  bk_glColor3f(0,1,0);
-	  bk_glVertex2i(600,300);
-	  bk_glColor3f(0,0,1);
-	  bk_glVertex2i(450,410);
-	  bk_glColor3f(1,1,0);
-	  bk_glVertex2i(100,400);
-	  bk_glColor3f(0,1,1);
-	  bk_glVertex2i(70,60);
-	  bk_glColor3f(1,0,1);
-	  bk_glVertex2i(350,100);
+		bk_glColor3f(1,0,0);
+		bk_glVertex2i(300,300);
+		bk_glColor3f(0,1,0);
+		bk_glVertex2i(600,300);
+		bk_glColor3f(0,0,1);
+		bk_glVertex2i(450,410);
+		bk_glColor3f(1,1,0);
+		bk_glVertex2i(100,400);
+		bk_glColor3f(0,1,1);
+		bk_glVertex2i(70,60);
+		bk_glColor3f(1,0,1);
+		bk_glVertex2i(350,100);
 	  bk_glEnd();
 	  break;
 	case 3:
@@ -553,7 +554,7 @@ void draw()
 		bk_glVertex2i(330,210);
 		bk_glVertex2i(330,60);
 		bk_glVertex2i(350,30);
-	  glEnd();
+	  bk_glEnd();
 	  break;
 	case 4:
 	  bk_glBegin(GL_LINE_LOOP);
