@@ -12,7 +12,7 @@
 using namespace std;
 
 // Globals
-#define HIGHT 480
+#define HEIGHT 480
 #define WIDTH 640
 
 // typedefs
@@ -27,7 +27,7 @@ GLenum pointMode;
 Point firstPoint;
 
 // Data Structures
-float raster[WIDTH*HIGHT*3];
+float raster[WIDTH*HEIGHT*3];
 Color curColor;
 Color clearColor;
 std::vector<Point> savedPoints;
@@ -90,7 +90,7 @@ void bk_glClear(GLint bit)
   
   //TODO what is this bit?!?!?!
   for (int x=0; x<WIDTH; x++)
-	for (int y=0; y<HIGHT; y++)
+	for (int y=0; y<HEIGHT; y++)
 	  setPixel(x,y, clearColor[0], clearColor[1], clearColor[2]);
 	  //setPixel(x,y, 1, 1, 1);
   return;
@@ -728,7 +728,7 @@ void myDraw()
   // Draw the array of pixels (This is where you draw the values
   // you have stored in the array 'raster')
   glRasterPos2f(-1,-1);
-  glDrawPixels(WIDTH,HIGHT,GL_RGB,GL_FLOAT,raster);
+  glDrawPixels(WIDTH,HEIGHT,GL_RGB,GL_FLOAT,raster);
   
   //Set the state back to what it was
   glPopMatrix();
@@ -760,7 +760,7 @@ void reshape (int w, int h)
   glLoadIdentity();
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  glOrtho(0, WIDTH, 0, HIGHT, -1, 1); // TODO only for project 2; delete therafter!
+  glOrtho(0, WIDTH, 0, HEIGHT, -1, 1); // TODO only for project 2; delete therafter!
 }
 
 // Create Keyboard Function
@@ -808,7 +808,7 @@ int main ( int argc, char** argv )
 {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE); 	// Display Mode
-  glutInitWindowSize(WIDTH, HIGHT); 			// This is the window size
+  glutInitWindowSize(WIDTH, HEIGHT); 			// This is the window size
   glutCreateWindow("OpenGL Example Program"); 	// Window Title
   init();
   glutDisplayFunc(display);  					// Matching Earlier Functions To Their Counterparts
