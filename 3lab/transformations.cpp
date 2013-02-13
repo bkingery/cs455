@@ -6,18 +6,20 @@
 #include <cml/cml.h>
 #include <iostream>
 #include <vector>
+#include <stack>
 #include <algorithm>
 
 #include <assert.h>
 using namespace std;
 
 // Globals
-#define HEIGHT 480
-#define WIDTH 640
+#define SCREENHEIGHT 480
+#define SCREENWIDTH 640
 
 #define PI (3.141592653589793)
 
 // typedefs
+typedef cml::matrix44d_c Matrix;
 typedef cml::vector4f Color;
 typedef cml::vector2i Point;
 typedef vector<Point> Line;
@@ -29,10 +31,21 @@ GLenum pointMode;
 Point firstPoint;
 
 // Data Structures
-float raster[WIDTH*HEIGHT*3];
+float raster[SCREENWIDTH*SCREENHEIGHT*3];
 Color curColor;
 Color clearColor;
 std::vector<Point> savedPoints;
+
+std::stack<Matrix> *curMatrixStack;
+std::stack<Matrix> modelViewStack;
+std::stack<Matrix> projectionStack;
+
+Matrix I( 1, 0, 0, 0,
+		  0, 1, 0, 0,
+		  0, 0, 1, 0,
+		  0, 0, 0, 1 );
+
+cml::vector4i viewport(1,1,1,1);
 
 bool pointCompareY(Point p1, Point p2) {return (p1[1] < p2[1]);}
 
@@ -52,6 +65,25 @@ void init ()
   
   curColor = Color(1,1,1,1);
   clearColor = Color(1,1,1,1);
+  
+  modelViewStack.push(I);
+  projectionStack.push(I);
+}
+
+/**
+ * Returns true if x,y is in the screen space
+ */
+bool isInScreen(int x, int y)
+{
+  return x>=0 && x<SCREENWIDTH && y>=0 && y<SCREENHEIGHT;
+}
+
+/**
+ * Returns true if x,y is in the viewport
+ */
+bool isInViewport(int x, int y)
+{
+  return x>=viewport[0] && x<viewport[2] && y>=viewport[1] && y<viewport[3];
 }
 
 /**
@@ -59,9 +91,12 @@ void init ()
  */
 void setPixel(int x, int y, float r, float g, float b)
 {
-  raster[((y*WIDTH) + x)*3 + 0] = r;
-  raster[((y*WIDTH) + x)*3 + 1] = g;
-  raster[((y*WIDTH) + x)*3 + 2] = b;
+  if (isInScreen(x,y) && isInViewport(x,y))
+  {
+	raster[((y*SCREENWIDTH) + x)*3 + 0] = r;
+	raster[((y*SCREENWIDTH) + x)*3 + 1] = g;
+	raster[((y*SCREENWIDTH) + x)*3 + 2] = b;
+  }
 }
 
 /**
@@ -69,10 +104,13 @@ void setPixel(int x, int y, float r, float g, float b)
  */
 Color getPixelColor(int x, int y)
 {
-  Color c = Color(0,0,0,1);
-  c[0] = raster[((y*WIDTH) + x)*3 + 0];
-  c[1] = raster[((y*WIDTH) + x)*3 + 1];
-  c[2] = raster[((y*WIDTH) + x)*3 + 2];
+  Color c = clearColor;
+  if (isInScreen(x,y) && isInViewport(x,y))
+  {
+	c[0] = raster[((y*SCREENWIDTH) + x)*3 + 0];
+	c[1] = raster[((y*SCREENWIDTH) + x)*3 + 1];
+	c[2] = raster[((y*SCREENWIDTH) + x)*3 + 2];
+  }
   
   return c;
 }
@@ -100,57 +138,15 @@ void clearSavedPoints()
 }
 
 /**
- * Sets the clear color.
- * 
+ * Returns a matrix in row column for based on m
+ * precondition: m is size 16
  */
-void bk_glClearColor(float r, float g, float b, float a)
+Matrix createMatrix(const double* m)
 {
-  glClearColor(r,g,b,a);  // Forward to OpenGL
-  clearColor.set(r,g,b,a);
-}
-
-/**
- * Clears the entire screen to the clear color.
- */
-void bk_glClear(GLint bit)
-{
-  glClear(bit);
-  
-  //TODO what is this bit?!?!?!
-  for (int x=0; x<WIDTH; x++)
-	for (int y=0; y<HEIGHT; y++)
-	  setPixel(x,y, clearColor[0], clearColor[1], clearColor[2]);
-  return;
-}
-
-/**
- * This tells you how to interpret points.
- * with parameters GL_POINTS, GL_LINES, and GL_TRIANGLES
- */
-void bk_glBegin(GLenum mode)
-{
-  glBegin(mode);
-  pointMode = mode;
-  firstPoint.set(-1, -1);
-  clearSavedPoints();
-}
-
-/**
- *  enable various capabilities
- */
-void bk_glEnable(GLenum cap)
-{
-  glEnable(cap);
-  return;
-}
-
-/**
- * disable various capabilities
- */
-void bk_glDisable(GLenum cap)
-{
-  glDisable(cap);
-  return;
+  return Matrix(m[0],	m[4],	m[8],	m[12],
+				m[1],	m[5],	m[9],	m[13],
+				m[2],	m[6],	m[10],	m[14],
+				m[3],	m[7],	m[11],	m[15]);
 }
 
 /**
@@ -202,14 +198,6 @@ Color colorInterpolation(Color COLOR1, Color COLOR2, float fraction)
   return Color(red*255.0f, green*255.0f, blue*255.0f, alpha*255.0f);
 }
 
-bool isClearColor(Color c)
-{
-  if (c[0] == clearColor[0] && c[1] == clearColor[1] && c[2] == clearColor[2])
-	return true;
-  else
-	return false;
-}
-
 /**
  * Draws a line with interpolated colors
  */
@@ -224,8 +212,6 @@ Line drawLine(int x1, int y1, int x2, int y2)
   
   Color cStart = getPixelColor(x1, y1);
   Color cEnd = getPixelColor(x2, y2);
-  assert(!isClearColor(cStart));
-  assert(!isClearColor(cEnd));
   
   int xStart = x1;
   int yStart = y1;
@@ -245,7 +231,6 @@ Line drawLine(int x1, int y1, int x2, int y2)
 	  d1 = pointDistance(xStart, yStart, x1, ys);
 	  d2 = pointDistance(xStart, yStart, x2, y2);
 	  Color c = colorInterpolation(cStart, cEnd, d1/d2);
-	  assert(!isClearColor(c));
 	  if (y1 == y2)
 	  {
 		for (int i=0; i<=lineWidth/2; i++)
@@ -275,7 +260,6 @@ Line drawLine(int x1, int y1, int x2, int y2)
 	  d1 = pointDistance(xStart, yStart, x1, y1);
 	  d2 = pointDistance(xStart, yStart, x2, y2);
 	  Color c = colorInterpolation(cStart, cEnd, d1/d2);
-	  assert(!isClearColor(c));
 	  for (int i=0; i<=lineWidth/2; i++)
 	  {
 		setPixel(x1+i, y1, c[0], c[1], c[2]);
@@ -308,14 +292,12 @@ void fillPolygon(Line l)
 	else
 	{
 	  drawLine(curXmin, curY, curXmax, curY);
-	  //cout << curXmin << " , " << curXmax << " , " << curY << endl;
 	  curY = p[1];
 	  curXmin = p[0];
 	  curXmax = p[0];
 	}
   }
   drawLine(curXmin, curY, curXmax, curY);	// Just in case no change in y
-  //cout << "\n************************\n" << endl;
 }
 
 /**
@@ -373,6 +355,55 @@ void drawStrip(int x, int y)
 }
 
 /**
+ * Sets the line width
+ */
+void bk_glLineWidth(int w)
+{
+  glLineWidth(w);
+  lineWidth = w;
+}
+
+/**
+ * Sets the clear color.
+ * 
+ */
+void bk_glClearColor(float r, float g, float b, float a)
+{
+  glClearColor(r,g,b,a);  // Forward to OpenGL
+  clearColor.set(r,g,b,a);
+}
+
+/**
+ * Clears the entire screen to the clear color.
+ */
+void bk_glClear(GLint bit)
+{
+  glClear(bit);
+  
+  //TODO check for GL_DEPTH_BUFFER_BIT,
+  //TODO and will clear only the current viewport, rather than the whole screen.
+  
+  //TODO what is this bit?!?!?!
+  for (int x=0; x<SCREENWIDTH; x++)
+	for (int y=0; y<SCREENHEIGHT; y++)
+	  setPixel(x,y, clearColor[0], clearColor[1], clearColor[2]);
+  return;
+}
+
+
+/**
+ * This tells you how to interpret points.
+ * with parameters GL_POINTS, GL_LINES, and GL_TRIANGLES
+ */
+void bk_glBegin(GLenum mode)
+{
+  glBegin(mode);
+  pointMode = mode;
+  firstPoint.set(-1, -1);
+  clearSavedPoints();
+}
+
+/**
  * There must be one glEnd for every glBegin.
  * glVertex only works between Begin & End pairs.
  */
@@ -389,14 +420,24 @@ void bk_glEnd()
   }
   pointMode = -1;
   clearSavedPoints();
+  //TODO clear more stuff
 }
 
 /**
- * For GL_MODELVIEW and GL_PROJECTION
+ *  enable various capabilities
  */
-void bk_glMatrixMode(GLenum e)
+void bk_glEnable(GLenum cap)
 {
-  glMatrixMode(e);
+  glEnable(cap);
+  return;
+}
+
+/**
+ * disable various capabilities
+ */
+void bk_glDisable(GLenum cap)
+{
+  glDisable(cap);
   return;
 }
 
@@ -406,7 +447,32 @@ void bk_glMatrixMode(GLenum e)
 void bk_glViewport(int x, int y, int width, int height)
 {
   glViewport(x,y,width,height);
+  //TODO
+  viewport.set(x,y,width,height);
   return;
+}
+
+/**
+ * Sets the current matrix stack
+ * Implemented for GL_MODELVIEW and GL_PROJECTION
+ */
+void bk_glMatrixMode(GLenum e)
+{
+  //cerr << "\n************************bk_glMatrixMode";
+  glMatrixMode(e);
+  switch (e)
+  {
+	case GL_MODELVIEW:
+	  //cerr << "Setting stack to modelview" << endl;
+	  curMatrixStack = &modelViewStack;
+	  break;
+	case GL_PROJECTION:
+	  //cerr << "Setting stack to projection" << endl;
+	  curMatrixStack = &projectionStack;
+	  break;
+	default:
+	  break;
+  }
 }
 
 /**
@@ -417,7 +483,9 @@ void bk_glViewport(int x, int y, int width, int height)
 void bk_glPushMatrix()
 {
   glPushMatrix();
-  return;
+  
+  Matrix m = curMatrixStack->top();
+  curMatrixStack->push(m);
 }
 
 /**
@@ -427,25 +495,11 @@ void bk_glPushMatrix()
 void bk_glPopMatrix()
 {
   glPopMatrix();
-  return;
-}
-
-/**
- * 
- */
-void bk_glVertex3f(float x, float y, float z)
-{
-  glVertex3f(x,y,z);
-  return;
-}
-
-/**
- * 
- */
-void bk_glVertex4f(float x, float y, float z, float w)
-{
-  glVertex4f(x,y,z,w);
-  return;
+  
+  if (curMatrixStack->size() > 1)
+  {
+	curMatrixStack->pop();
+  }
 }
 
 /**
@@ -456,18 +510,24 @@ void bk_glVertex4f(float x, float y, float z, float w)
 void bk_glLoadIdentity()
 {
   glLoadIdentity();
-  return;
+  
+  bk_glPopMatrix();
+  curMatrixStack->push(I);
 }
 
 /**
  * Replaces the current matrix with the one whose elements are specified by m.
- * The current matrix is the projection matrix, modelview matrix, or texture matrix,
+ * The current matrix is the projection matrix, or modelview matrix,
  * depending on the current matrix mode
  */
-void bk_glLoadMatrixd(double* m)
+void bk_glLoadMatrixd(const double* m)
 {
+  //TODO fix pop/push to be loadmatrix?
   glLoadMatrixd(m);
-  return;
+  
+  Matrix M = createMatrix(m);
+  curMatrixStack->pop();
+  curMatrixStack->push(M);
 }
 
 /**
@@ -476,8 +536,13 @@ void bk_glLoadMatrixd(double* m)
  */
 void bk_glMultMatrixd(const double* m)
 {
+  //TODO fix pop/push to be loadmatrix?
   glMultMatrixd(m);
-  return;
+  
+  Matrix M = createMatrix(m);
+  Matrix C = curMatrixStack->top();
+  curMatrixStack->pop();
+  curMatrixStack->push(C*M);
 }
 
 /**
@@ -489,7 +554,7 @@ void bk_glMultMatrixd(const double* m)
  */
 void bk_glVertex2i(int x, int y)
 {
-  glVertex2i(x,y);
+  //glVertex2i(x,y);
   
   setPixel(x,y, curColor[0], curColor[1], curColor[2]);
   
@@ -580,13 +645,49 @@ void bk_glVertex2i(int x, int y)
 }
 
 /**
- * 
+ * Specifies the 4-vector x,y,z,w
+ */
+void bk_glVertex4f(float x, float y, float z, float w)
+{
+  glVertex4f(x,y,z,w);
+  
+  Matrix P = projectionStack.top();
+  Matrix M = modelViewStack.top();
+  
+  cml::vector4f world(x,y,z,w);
+  cml::vector4f tmp = P*M*world;
+  tmp = (1/tmp[3])*tmp;
+  
+  double newX = (((tmp[0]+1)/2.0)*viewport[2])+viewport[0];
+  double newY = (((tmp[1]+1)/2.0)*viewport[3])+viewport[1];
+  
+  bk_glVertex2i((int)(newX+0.5), (int)(newY+0.5));
+  
+  return;
+}
+
+/**
+ * Specifies the 4-vector x,y,z,1
+ */
+void bk_glVertex3f(float x, float y, float z)
+{
+  //glVertex3f(x,y,z);
+  
+  bk_glVertex4f(x,y,z,1);
+  return;
+}
+
+/**
+ * Specifies the 3-vector x,y,0
  */
 void bk_glVertex2f(float x, float y)
 {
-  glVertex2f(x,y);
+  //glVertex2f(x,y);
+  
+  bk_glVertex3f(x,y,0);
   return;
 }
+
 
 /**
  * There is one current color (a 4-vector) at all times in OpenGL.
@@ -599,35 +700,51 @@ void bk_glColor3f(float r, float g, float b)
 }
 
 /**
- * Sets the line width
- */
-void bk_glLineWidth(int w)
-{
-  glLineWidth(w);
-  lineWidth = w;
-}
+ * produces a rotation of angle degrees around the vector (x, y, z).
+  	The current matrix (see glMatrixMode) is multiplied by a rotation
+	matrix  with  the  product  replacing  the  current   matrix,   as   if
+	glMultMatrix were called with the following matrix as its argument:
 
-/**
- * produces a rotation of angle degrees around the vector (x,  y,
-       z).   The current matrix (see glMatrixMode) is multiplied by a rotation
-       matrix  with  the  product  replacing  the  current   matrix,   as   if
-       glMultMatrix were called with the following matrix as its argument:
+	  x^2(1-c)+c     xy(1-c)-zs     xz(1-c)+ys     0
+	  yx(1-c)+zs     y^2(1-c)+c     yz(1-c)-xs     0
+	  xz(1-c)-ys     yz(1-c)+xs     z^2(1-c)+c     0
+		   0              0               0        1
 
-         x^2(1-c)+c     xy(1-c)-zs     xz(1-c)+ys     0
-         yx(1-c)+zs     y^2(1-c)+c     yz(1-c)-xs     0
-         xz(1-c)-ys     yz(1-c)+xs     z^2(1-c)+c     0
-              0              0               0        1
+	Where  c = cos (angle), s = sin (angle), and ||(x, y, z)|| = 1 (if not,
+	the GL will normalize this vector).
 
-       Where  c = cos (angle), s = sin (angle), and ||(x, y, z)|| = 1 (if not,
-       the GL will normalize this vector).
-
-       If the matrix mode is either GL_MODELVIEW or GL_PROJECTION, all objects
-       drawn  after  glRotate  is  called  are  rotated.  Use glPushMatrix and
-       glPopMatrix to save and restore the unrotated coordinate system.
+	If the matrix mode is either GL_MODELVIEW or GL_PROJECTION, all objects
+	drawn  after  glRotate  is  called  are  rotated.  Use glPushMatrix and
+	glPopMatrix to save and restore the unrotated coordinate system.
  */
 void bk_glRotatef(float angle, float x, float y, float z)
 {
-  glRotatef(angle,x,y,z);
+  //TODO Can I just do the bk_multMatrixd thing?
+  //glRotatef(angle,x,y,z);
+  
+  double c = cos(angle);
+  double s = sin(angle);
+  
+  cml::vector3f v(x,y,z);
+  
+  double norm = sqrt(cml::dot(v,v));
+  cout << "The Norm is: " << norm << endl;
+  if (norm != 1)
+  {
+	cout << "Normalizing" << endl;
+	cml::vector3f n = cml::normalize(v);
+	x = n[0];
+	y = n[1];
+	z = n[2];
+  }
+  
+  Matrix R(	pow(x,2)*(1-c)+c, 	x*y*(1-c)-z*s, 		x*z*(1-c)+y*s,		0,
+			y*x*(1-c)+z*s,		pow(y,2)*(1-c)+c,	y*z*(1-c)-x*s,		0,
+			x*z*(1-c)-y*s,		y*z*(1-c)+x*s,		pow(z,2)*(1-c)+c,	0,
+			0,					0,					0,					1 );
+  
+  bk_glMultMatrixd(R.data());
+  
   return;
 }
 
@@ -650,7 +767,14 @@ void bk_glRotatef(float angle, float x, float y, float z)
  */
 void bk_glTranslatef(float x, float y, float z)
 {
-  glTranslatef(x,y,z);
+  //glTranslatef(x,y,z);
+  
+  Matrix T(	1,	0,	0,	x,
+			0,	1,	0,	y,
+			0,	0,	1,	z,
+			0,	0,	0,	1 );
+  
+  bk_glMultMatrixd(T.data());
   return;
 }
 
@@ -676,7 +800,15 @@ void bk_glTranslatef(float x, float y, float z)
  */
 void bk_glScalef(float x, float y, float z)
 {
-  glScalef(x,y,z);
+  //glScalef(x,y,z);
+  
+  Matrix S(	x,	0,	0,	0,
+			0,	y,	0,	0,
+			0,	0,	z,	0,
+			0,	0,	0,	1 );
+  
+  bk_glMultMatrixd(S.data());
+  
   return;
 }
 
@@ -703,9 +835,7 @@ void bk_glScalef(float x, float y, float z)
 
 	where
 					tx = - (right + left) / (right - left)
-
 					ty = - (top + bottom) / (top - bottom)
-
 					tz = - (zFar + zNear) / (zFar - zNear)
 
 	Typically,  the  matrix  mode  is  GL_PROJECTION,  and  (left,  bottom,
@@ -720,7 +850,18 @@ void bk_glScalef(float x, float y, float z)
  */
 void bk_glOrtho(double left, double right, double bottom, double top, double zNear, double zFar)
 {
-  glOrtho(left, right, bottom, top, zNear, zFar);
+  //glOrtho(left, right, bottom, top, zNear, zFar);
+  
+  double tx = - (right + left) / (right - left);
+  double ty = - (top + bottom) / (top - bottom);
+  double tz = - (zFar + zNear) / (zFar - zNear);
+  
+  Matrix O(	2/(right-left),	0,				0,					tx,
+			0,				2/(top-bottom),	0,					ty,
+			0,				0,				-2/(zFar-zNear),	tz,
+			0,				0,				0,					1 );
+  
+  bk_glMultMatrixd(O.data());
   return;
 }
 
@@ -734,8 +875,8 @@ void tree(int depth)
   static const double mup[16] = { 0,r2,0,0, -r2,0,0,0, 0,0,1,0, 0,r2,0,1 };
   if (depth <= 0) return;
   bk_glBegin(GL_LINES);
-	bk_glVertex2f(0,-r2);	//TODO I changed this from 2f
-	bk_glVertex2f(0, r2);	//TODO I changed this from 2f
+	bk_glVertex2f(0,-r2);
+	bk_glVertex2f(0, r2);
   bk_glEnd();
   
   bk_glPushMatrix();
@@ -780,7 +921,7 @@ void draw()
 		bk_glVertex3f(0.5,0.8,0);
 	  bk_glEnd();
 	  //Restore your viewport to the whole screen
-	  bk_glViewport(0,0,WIDTH,HEIGHT);
+	  bk_glViewport(0,0,SCREENWIDTH,SCREENHEIGHT);
 	  break;
 	}
 	case 1:	//Divide-by-w
@@ -830,7 +971,7 @@ void draw()
 		bk_glVertex3f(1.5,-0.2,0.5);
 	  bk_glEnd();
 	  //Restore your viewport to the whole screen
-	  bk_glViewport(0,0,WIDTH,HEIGHT);
+	  bk_glViewport(0,0,SCREENWIDTH,SCREENHEIGHT);
 	  bk_glDisable(GL_DEPTH_TEST);
 	  break;
 	}
@@ -975,7 +1116,7 @@ void myDraw()
   // Draw the array of pixels (This is where you draw the values
   // you have stored in the array 'raster')
   glRasterPos2f(-1,-1);
-  glDrawPixels(WIDTH,HEIGHT,GL_RGB,GL_FLOAT,raster);
+  glDrawPixels(SCREENWIDTH,SCREENHEIGHT,GL_RGB,GL_FLOAT,raster);
   
   //Set the state back to what it was
   glPopMatrix();
@@ -1002,11 +1143,11 @@ void display(void)
  */
 void reshape (int w, int h)   
 {
-  glViewport(0, 0, w, h);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
+  bk_glViewport(0, 0, w, h);
+  bk_glMatrixMode(GL_PROJECTION);
+  bk_glLoadIdentity();
+  bk_glMatrixMode(GL_MODELVIEW);
+  bk_glLoadIdentity();
 }
 
 // Create Keyboard Function
@@ -1054,7 +1195,7 @@ int main ( int argc, char** argv )
 {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE); 	// Display Mode
-  glutInitWindowSize(WIDTH, HEIGHT); 			// This is the window size
+  glutInitWindowSize(SCREENWIDTH, SCREENHEIGHT); 			// This is the window size
   glutCreateWindow("OpenGL Example Program"); 	// Window Title
   init();
   glutDisplayFunc(display);  					// Matching Earlier Functions To Their Counterparts
