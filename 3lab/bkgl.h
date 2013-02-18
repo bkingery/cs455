@@ -20,17 +20,15 @@ using namespace std;
 
 #define PI (3.141592653589793)
 
-
+// typedefs
+typedef cml::matrix44d_c Matrix;
+typedef cml::vector4f Color;
+typedef cml::vector2i Point;
+typedef vector<Point> Line;
 
 class bkgl
 {
-private:
-    // typedefs
-    typedef cml::matrix44d_c Matrix;
-    typedef cml::vector4f Color;
-    typedef cml::vector2i Point;
-    typedef vector<Point> Line;
-    
+private:    
     float raster[SCREENWIDTH*SCREENHEIGHT*3];
     
     int drawMode;
@@ -54,11 +52,16 @@ public:
     bkgl();
     ~bkgl();
     
+    //TODO make a point class
+    static bool pointCompareY(Point p1, Point p2) {return (p1[1] < p2[1]);}
+    
+    const float * getRaster(void);
+    
     bool isInScreen(int x, int y);
-    bool isInViewPort(int x, int y);
+    bool isInViewport(int x, int y);
     
     void setPixel(int x, int y, float r, float g, float b);
-    void getPixelColor(int x, int y);
+    Color getPixelColor(int x, int y);
     
     bool savePoints(int x, int y, int n);
     void clearSavedPoints();
@@ -98,7 +101,7 @@ public:
     void bkVertex2f(float x, float y);
     
     void bkRotatef(float angle, float x, float y, float z);
-    void bkTranslatef(flat x, float y, float z);
+    void bkTranslatef(float x, float y, float z);
     void bkScalef(float x, float y, float z);
     void bkOrtho(double left, double right, double bottom, double top, double zNear, double zFar);
     

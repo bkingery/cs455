@@ -1,32 +1,30 @@
 
 #include "bkgl.h"
 
-//TODO make a point class
-bool pointCompareY(Point p1, Point p2) {return (p1[1] < p2[1]);}
-
 
 /**
  * Constructor
  */
 bkgl::bkgl()
 {
-  drawMode = 0;
   lineWidth = 0;
   pointMode -1;
-  firstPoint(-1,-1);
+  firstPoint.set(-1,-1);
   
   curColor = Color(1,1,1,1);
   clearColor = Color(1,1,1,1);
   
-  Matrix I = Matrix( 1, 0, 0, 0,
-					 0, 1, 0, 0,
-					 0, 0, 1, 0,
-					 0, 0, 0, 1 );
+  I.set( 1, 0, 0, 0,
+		 0, 1, 0, 0,
+		 0, 0, 1, 0,
+		 0, 0, 0, 1 );
   
   viewport = cml::vector4i(0,0,SCREENWIDTH,SCREENHEIGHT);
   
   modelViewStack.push(I);
+  //cerr << modelViewStack.top() << endl;
   projectionStack.push(I);
+  //cerr << projectionStack.top() << endl;
 }
 
 /**
@@ -35,6 +33,11 @@ bkgl::bkgl()
 bkgl::~bkgl()
 {
   return;
+}
+
+const float * bkgl::getRaster()
+{
+  return raster;
 }
 
 /**
@@ -171,6 +174,10 @@ Color bkgl::colorInterpolation(Color COLOR1, Color COLOR2, float fraction)
  */
 Line bkgl::drawLine(int x1, int y1, int x2, int y2)
 {
+  //cerr << "x1: " << x1 << endl;
+  //cerr << "x2: " << x2 << endl;
+  //cerr << "y1: " << y1 << endl;
+  //cerr << "y2: " << y2 << endl;
   Line line;
   
   float dy = y2 - y1;
@@ -237,6 +244,7 @@ Line bkgl::drawLine(int x1, int y1, int x2, int y2)
 	}
   }
   
+  //cerr << "Draw Line, Line size: " << line.size() << endl;
   return line;
 }
 
@@ -246,6 +254,7 @@ Line bkgl::drawLine(int x1, int y1, int x2, int y2)
  */
 void bkgl::fillPolygon(Line l)
 {
+  //cerr << "Line size: " << l.size() << endl;
   int curY = l[0][1];
   int curXmin = l[0][0];
   int curXmax = l[0][0];
@@ -282,6 +291,8 @@ void bkgl::drawTriangle(Point p1, Point p2, Point p3)
   
   sort(l1.begin(), l1.end(), pointCompareY);
   
+  //cerr << "Line size: " << l1.size() << endl;
+  
   fillPolygon(l1);
 }
 
@@ -301,6 +312,7 @@ void bkgl::drawQuad(Point p1, Point p2, Point p3, Point p4)
   
   sort(l1.begin(), l1.end(), pointCompareY);
   
+  //cerr << "Line size: " << l1.size() << endl;
   fillPolygon(l1);
 }
 
@@ -359,7 +371,7 @@ void bkgl::bkClear(GLint bit)
  * This tells you how to interpret points.
  * with parameters GL_POINTS, GL_LINES, and GL_TRIANGLES
  */
-void blgl::bkBegin(GLenum mode)
+void bkgl::bkBegin(GLenum mode)
 {
   pointMode = mode;
   firstPoint.set(-1, -1);
@@ -418,7 +430,7 @@ void bkgl::bkViewport(int x, int y, int width, int height)
  */
 void bkgl::bkMatrixMode(GLenum e)
 {
-  //cerr << "\n************************bk_glMatrixMode";
+  //cerr << "\n************************bkMatrixMode";
   switch (e)
   {
 	case GL_MODELVIEW:
@@ -464,7 +476,7 @@ void bkgl::bkPopMatrix()
  */
 void bkgl::bkLoadIdentity()
 {
-  bk_glPopMatrix();
+  bkPopMatrix();
   curMatrixStack->push(I);
 }
 
@@ -600,14 +612,20 @@ void bkgl::bkVertex4f(float x, float y, float z, float w)
   Matrix P = projectionStack.top();
   Matrix M = modelViewStack.top();
   
+  //cerr << "P: " << P << endl;
+  //cerr << "M: " << M << endl;
+  
   cml::vector4f world(x,y,z,w);
   cml::vector4f tmp = P*M*world;
-  tmp = (1/tmp[3])*tmp;
+  tmp = (1.0/tmp[3])*tmp;
   
   double newX = (((tmp[0]+1)/2.0)*viewport[2])+viewport[0];
   double newY = (((tmp[1]+1)/2.0)*viewport[3])+viewport[1];
   
-  bk_glVertex2i((int)(newX+0.5), (int)(newY+0.5));
+  //cerr << "newX: " << newX << endl;
+  //cerr << "newY: " << newY << endl;
+  
+  bkVertex2i((int)(newX+0.5), (int)(newY+0.5));
   
   return;
 }
@@ -617,7 +635,7 @@ void bkgl::bkVertex4f(float x, float y, float z, float w)
  */
 void bkgl::bkVertex3f(float x, float y, float z)
 {
-  bk_glVertex4f(x,y,z,1);
+  bkVertex4f(x,y,z,1);
   return;
 }
 
@@ -626,7 +644,7 @@ void bkgl::bkVertex3f(float x, float y, float z)
  */
 void bkgl::bkVertex2f(float x, float y)
 {
-  bk_glVertex3f(x,y,0);
+  bkVertex3f(x,y,0);
   return;
 }
 
@@ -665,10 +683,10 @@ void bkgl::bkRotatef(float angle, float x, float y, float z)
   cml::vector3f v(x,y,z);
   
   double norm = sqrt(cml::dot(v,v));
-  cout << "The Norm is: " << norm << endl;
+  //cout << "The Norm is: " << norm << endl;
   if (norm != 1)
   {
-	cout << "Normalizing" << endl;
+	//cout << "Normalizing" << endl;
 	cml::vector3f n = cml::normalize(v);
 	x = n[0];
 	y = n[1];
@@ -680,7 +698,7 @@ void bkgl::bkRotatef(float angle, float x, float y, float z)
 			x*z*(1-c)-y*s,		y*z*(1-c)+x*s,		pow(z,2)*(1-c)+c,	0,
 			0,					0,					0,					1 );
   
-  bk_glMultMatrixd(R.data());
+  bkMultMatrixd(R.data());
   
   return;
 }
@@ -709,7 +727,7 @@ void bkgl::bkTranslatef(float x, float y, float z)
 			0,	0,	1,	z,
 			0,	0,	0,	1 );
   
-  bk_glMultMatrixd(T.data());
+  bkMultMatrixd(T.data());
 }
 
 /**
@@ -739,7 +757,7 @@ void bkgl::bkScalef(float x, float y, float z)
 			0,	0,	z,	0,
 			0,	0,	0,	1 );
   
-  bk_glMultMatrixd(S.data());
+  bkMultMatrixd(S.data());
 }
 
 /**
@@ -789,7 +807,7 @@ void bkgl::bkOrtho(double left, double right, double bottom, double top, double 
 			0,				0,				-2/(zFar-zNear),	tz,
 			0,				0,				0,					1 );
   
-  bk_glMultMatrixd(O.data());
+  bkMultMatrixd(O.data());
 }
 
 

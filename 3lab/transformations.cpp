@@ -13,7 +13,10 @@
 
 using namespace std;
 
-bkgl bk();
+bool drawMine;
+int drawMode;
+
+bkgl bk;
 
 void init ()
 {
@@ -25,6 +28,7 @@ void init ()
   glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
   
   drawMine = false;
+  drawMode = 0;
 }
 
 /**
@@ -99,7 +103,7 @@ void bk_glDisable(GLenum cap)
 void bk_glViewport(int x, int y, int width, int height)
 {
   glViewport(x,y,width,height);
-  bl.bkViewport(x,y,width,height);
+  bk.bkViewport(x,y,width,height);
 }
 
 /**
@@ -502,7 +506,7 @@ void myDraw()
   // Draw the array of pixels (This is where you draw the values
   // you have stored in the array 'raster')
   glRasterPos2f(-1,-1);
-  glDrawPixels(SCREENWIDTH,SCREENHEIGHT,GL_RGB,GL_FLOAT,raster);
+  glDrawPixels(SCREENWIDTH,SCREENHEIGHT,GL_RGB,GL_FLOAT, bk.getRaster());
   
   //Set the state back to what it was
   glPopMatrix();
