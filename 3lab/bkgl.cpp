@@ -9,7 +9,7 @@ bkgl::bkgl()
 {
   lineWidth = 0;
   pointMode -1;
-  firstPoint.set(-1,-1);
+  //firstPoint = NULL;
   
   curColor = Color(1,1,1,1);
   clearColor = Color(1,1,1,1);
@@ -22,9 +22,7 @@ bkgl::bkgl()
   viewport = cml::vector4i(0,0,SCREENWIDTH,SCREENHEIGHT);
   
   modelViewStack.push(I);
-  //cerr << modelViewStack.top() << endl;
   projectionStack.push(I);
-  //cerr << projectionStack.top() << endl;
 }
 
 /**
@@ -53,7 +51,7 @@ bool bkgl::isInScreen(int x, int y)
  */
 bool bkgl::isInViewport(int x, int y)
 {
-  return x>=viewport[0] && x<viewport[2] && y>=viewport[1] && y<viewport[3];
+  return x>=viewport[0] && x<viewport[0]+viewport[2] && y>=viewport[1] && y<viewport[1]+viewport[3];
 }
 
 /**
@@ -61,7 +59,7 @@ bool bkgl::isInViewport(int x, int y)
  */
 void bkgl::setPixel(int x, int y, float r, float g, float b)
 {
-  if (isInScreen(x,y) && isInViewport(x,y))
+    if (isInScreen(x,y) && isInViewport(x,y))
   {
 	raster[((y*SCREENWIDTH) + x)*3 + 0] = r;
 	raster[((y*SCREENWIDTH) + x)*3 + 1] = g;
@@ -70,29 +68,37 @@ void bkgl::setPixel(int x, int y, float r, float g, float b)
 }
 
 /**
+ * Set pixle color r,g,b in raster for x,y
+ */
+void bkgl::setPixel(Point p)
+{
+  setPixel(p.x, p.y, p.color[0], p.color[1], p.color[2]);
+}
+
+/**
  * Gets the color of the pixel specified by x,y
  */
-Color bkgl::getPixelColor(int x, int y)
-{
-  //TODO make one for point
-  Color c = clearColor;
-  if (isInScreen(x,y) && isInViewport(x,y))
-  {
-	c[0] = raster[((y*SCREENWIDTH) + x)*3 + 0];
-	c[1] = raster[((y*SCREENWIDTH) + x)*3 + 1];
-	c[2] = raster[((y*SCREENWIDTH) + x)*3 + 2];
-  }
-  
-  return c;
-}
+//Color bkgl::getPixelColor(int x, int y)
+//{
+//  //TODO make one for point
+//  Color c = clearColor;
+//  if (isInScreen(x,y) && isInViewport(x,y))
+//  {
+//	c[0] = raster[((y*SCREENWIDTH) + x)*3 + 0];
+//	c[1] = raster[((y*SCREENWIDTH) + x)*3 + 1];
+//	c[2] = raster[((y*SCREENWIDTH) + x)*3 + 2];
+//  }
+//  
+//  return c;
+//}
 
 /**
  * Saves n points for drawing 
  * return true when n or more points are saved.
  */
-bool bkgl::savePoints(int x, int y, int n)
+bool bkgl::savePoints(Point p, int n)
 {
-  savedPoints.push_back(Point(x,y));
+  savedPoints.push_back(p);
   if (savedPoints.size() >= n)
 	return true;
   else
@@ -172,12 +178,14 @@ Color bkgl::colorInterpolation(Color COLOR1, Color COLOR2, float fraction)
 /**
  * Draws a line with interpolated colors
  */
-Line bkgl::drawLine(int x1, int y1, int x2, int y2)
+//Line bkgl::drawLine(int x1, int y1, int x2, int y2)
+Line bkgl::drawLine(Point p1, Point p2)
 {
-  //cerr << "x1: " << x1 << endl;
-  //cerr << "x2: " << x2 << endl;
-  //cerr << "y1: " << y1 << endl;
-  //cerr << "y2: " << y2 << endl;
+  int x1 = p1.x;
+  int y1 = p1.y;
+  int x2 = p2.x;
+  int y2 = p2.y;
+  
   Line line;
   
   float dy = y2 - y1;
@@ -185,8 +193,8 @@ Line bkgl::drawLine(int x1, int y1, int x2, int y2)
   float m = dy / dx;			// slope
   float b = y1 - m*(float)x1;	// intercept
   
-  Color cStart = getPixelColor(x1, y1);
-  Color cEnd = getPixelColor(x2, y2);
+  Color cStart = p1.getColor();//getPixelColor(x1, y1);
+  Color cEnd = p2.getColor();//getPixelColor(x2, y2);
   
   int xStart = x1;
   int yStart = y1;
@@ -222,7 +230,7 @@ Line bkgl::drawLine(int x1, int y1, int x2, int y2)
 		  setPixel(x1-i, ys, c[0], c[1], c[2]);
 		}
 	  }
-	  line.push_back(Point(x1,ys));
+	  line.push_back(Point(x1,(int)ys, p1.z, p1.w, c)); //TODO interpolate z
 	}
   }
   else 												// slope >=1
@@ -240,7 +248,7 @@ Line bkgl::drawLine(int x1, int y1, int x2, int y2)
 		setPixel(x1+i, y1, c[0], c[1], c[2]);
 		setPixel(x1-i, y1, c[0], c[1], c[2]);
 	  }
-	  line.push_back(Point(x1,y1));
+	  line.push_back(Point(x1,y1, p1.z, p1.w, c));	//TODO interpolate z
 	}
   }
   
@@ -255,26 +263,27 @@ Line bkgl::drawLine(int x1, int y1, int x2, int y2)
 void bkgl::fillPolygon(Line l)
 {
   //cerr << "Line size: " << l.size() << endl;
-  int curY = l[0][1];
-  int curXmin = l[0][0];
-  int curXmax = l[0][0];
+  int curY = l[0].y;
+  Point curXmin = l[0];
+  Point curXmax = l[0];
+  
   for (Line::iterator it = l.begin(); it != l.end(); ++it)
   {
 	Point p = *it;
-	if (p[1] == curY)
+	if (p.y == curY)
 	{
-	  curXmin = (p[0] < curXmin) ? p[0] : curXmin;
-	  curXmax = (p[0] > curXmax) ? p[0] : curXmax;
+	  curXmin = (p.x < curXmin.x) ? p : curXmin;
+	  curXmax = (p.x > curXmax.x) ? p : curXmax;
 	}
 	else
 	{
-	  drawLine(curXmin, curY, curXmax, curY);
-	  curY = p[1];
-	  curXmin = p[0];
-	  curXmax = p[0];
+	  drawLine(curXmin, curXmax);
+	  curY = p.y;
+	  curXmin = p;
+	  curXmax = p;
 	}
   }
-  drawLine(curXmin, curY, curXmax, curY);	// Just in case no change in y
+  drawLine(curXmin, curXmax);	// Just in case no change in y
 }
 
 /**
@@ -282,9 +291,9 @@ void bkgl::fillPolygon(Line l)
  */
 void bkgl::drawTriangle(Point p1, Point p2, Point p3)
 {
-  Line l1 = drawLine(p1[0], p1[1], p2[0], p2[1]);
-  Line l2 = drawLine(p2[0], p2[1], p3[0], p3[1]);
-  Line l3 = drawLine(p3[0], p3[1], p1[0], p1[1]);
+  Line l1 = drawLine(p1, p2);
+  Line l2 = drawLine(p2, p3);
+  Line l3 = drawLine(p3, p1);
   
   l1.insert(l1.end(), l2.begin(), l2.end());
   l1.insert(l1.end(), l3.begin(), l3.end());
@@ -301,10 +310,10 @@ void bkgl::drawTriangle(Point p1, Point p2, Point p3)
  */
 void bkgl::drawQuad(Point p1, Point p2, Point p3, Point p4)
 {
-  Line l1 = drawLine(p1[0], p1[1], p2[0], p2[1]);
-  Line l2 = drawLine(p2[0], p2[1], p3[0], p3[1]);
-  Line l3 = drawLine(p3[0], p3[1], p4[0], p4[1]);
-  Line l4 = drawLine(p4[0], p4[1], p1[0], p1[1]);
+  Line l1 = drawLine(p1, p2);
+  Line l2 = drawLine(p2, p3);
+  Line l3 = drawLine(p3, p4);
+  Line l4 = drawLine(p4, p1);
   
   l1.insert(l1.begin(), l2.begin(), l2.end());
   l1.insert(l1.begin(), l3.begin(), l3.end());
@@ -319,18 +328,18 @@ void bkgl::drawQuad(Point p1, Point p2, Point p3, Point p4)
 /**
  * Draws a line strip and saves the last point
  */
-void bkgl::drawStrip(int x, int y)
+void bkgl::drawStrip(Point p)
 {
-  if (firstPoint[0] == -1)
-	firstPoint.set(x,y);
+  if (firstPoint.x == -1)
+	firstPoint.setCoordinates(p.x, p.y, p.z, p.w);
 	
-  if (savePoints(x,y,2))
+  if (savePoints(p,2))
   {
 	Point p1 = savedPoints[0];
 	Point p2 = savedPoints[1];
-	drawLine(p1[0], p1[1], p2[0], p2[1]);
+	drawLine(p1, p2);
 	clearSavedPoints();
-	savePoints(x,y,2);
+	savePoints(p,2);
   }
 }
 
@@ -374,7 +383,7 @@ void bkgl::bkClear(GLint bit)
 void bkgl::bkBegin(GLenum mode)
 {
   pointMode = mode;
-  firstPoint.set(-1, -1);
+  firstPoint.setCoordinates(-1, -1, 0, 1);
   clearSavedPoints();
 }
 
@@ -387,7 +396,7 @@ void bkgl::bkEnd()
   switch (pointMode)
   {
 	case GL_LINE_LOOP:
-	  drawStrip(firstPoint[0], firstPoint[1]);
+	  drawStrip(firstPoint);
 	  break;
 	default:
 	  break;
@@ -506,34 +515,27 @@ void bkgl::bkMultMatrixd(const double* m)
   curMatrixStack->push(C*M);
 }
 
-/**
- * glVertex specifies a point for drawing, though how it is drawn depends
- * on the mode specified by glBegin.
- * glVertex2i(x,y) specifies the 4-vector point (x,y,0,1).
- *
- * plus possibly other glVertex calls
- */
-void bkgl::bkVertex2i(int x, int y)
+void bkgl::drawCurMode(Point p)
 {
-  //TODO move this set pixle
-  setPixel(x,y, curColor[0], curColor[1], curColor[2]);
+   //TODO move this set pixle
+  setPixel(p);
   
   switch (pointMode)
   {
 	case GL_POINTS:
-	  //setPixel(x,y, curColor[0], curColor[1], curColor[2]);
+	  setPixel(p);
 	  break;
 	case GL_LINES:
-	  if (savePoints(x,y,2))
+	  if (savePoints(p,2))
 	  {
 		Point p1 = savedPoints[0];
 		Point p2 = savedPoints[1];
-		drawLine(p1[0], p1[1], p2[0], p2[1]);
+		drawLine(p1, p2);
 		clearSavedPoints();
 	  }
 	  break;
 	case GL_TRIANGLES:
-	  if (savePoints(x,y,3))
+	  if (savePoints(p,3))
 	  {
 		Point p1 = savedPoints[0];
 		Point p2 = savedPoints[1];
@@ -543,38 +545,38 @@ void bkgl::bkVertex2i(int x, int y)
 	  }
 	  break;
 	case GL_LINE_STRIP:
-	  drawStrip(x,y);
+	  drawStrip(p);
 	  break;
 	case GL_LINE_LOOP:
-	  drawStrip(x,y);
+	  drawStrip(p);
 	  break;
 	case GL_TRIANGLE_STRIP:
-	  if (savePoints(x,y,3))
+	  if (savePoints(p,3))
 	  {
 		Point p1 = savedPoints[0];
 		Point p2 = savedPoints[1];
 		Point p3 = savedPoints[2];
 		drawTriangle(p1, p2, p3);
 		clearSavedPoints();
-		savePoints(p2[0],p2[1],3);
-		savePoints(p3[0],p3[1],3);
+		savePoints(p2,3);
+		savePoints(p3,3);
 	  }
 	  break;
 	case GL_POLYGON:
 	case GL_TRIANGLE_FAN:
-	  if (savePoints(x,y,3))
+	  if (savePoints(p,3))
 	  {
 		Point p1 = savedPoints[0];
 		Point p2 = savedPoints[1];
 		Point p3 = savedPoints[2];
 		drawTriangle(p1, p2, p3);
 		clearSavedPoints();
-		savePoints(p1[0],p1[1],3);
-		savePoints(p3[0],p3[1],3);
+		savePoints(p1,3);
+		savePoints(p3,3);
 	  }
 	  break;
 	case GL_QUADS:
-	  if (savePoints(x,y,4))
+	  if (savePoints(p,4))
 	  {
 		Point p1 = savedPoints[0];
 		Point p2 = savedPoints[1];
@@ -585,7 +587,7 @@ void bkgl::bkVertex2i(int x, int y)
 	  }
 	  break;
 	case GL_QUAD_STRIP:
-	  if (savePoints(x,y,4))
+	  if (savePoints(p,4))
 	  {
 		Point p1 = savedPoints[0];
 		Point p2 = savedPoints[1];
@@ -593,8 +595,8 @@ void bkgl::bkVertex2i(int x, int y)
 		Point p4 = savedPoints[3];
 		drawQuad(p1, p2, p4, p3);
 		clearSavedPoints();
-		savePoints(p3[0],p3[1],3);
-		savePoints(p4[0],p4[1],3);
+		savePoints(p3,3);
+		savePoints(p4,3);
 	  }
 	  break;
 	default:
@@ -605,9 +607,22 @@ void bkgl::bkVertex2i(int x, int y)
 }
 
 /**
- * Specifies the 4-vector x,y,z,w
+ * glVertex specifies a point for drawing, though how it is drawn depends
+ * on the mode specified by glBegin.
+ * glVertex2i(x,y) specifies the 4-vector point (x,y,0,1).
+ *
+ * plus possibly other glVertex calls
  */
-void bkgl::bkVertex4f(float x, float y, float z, float w)
+void bkgl::bkVertex2i(int x, int y)
+{
+  bkVertex4f(x,y,0,1);
+}
+
+/**
+ * Specifies the 4-vector x,y,z,w
+ * Default value for w is 1
+ */
+void bkgl::bkVertex4f(float x, float y, float z, float w=1)
 {
   Matrix P = projectionStack.top();
   Matrix M = modelViewStack.top();
@@ -625,15 +640,19 @@ void bkgl::bkVertex4f(float x, float y, float z, float w)
   //cerr << "newX: " << newX << endl;
   //cerr << "newY: " << newY << endl;
   
-  bkVertex2i((int)(newX+0.5), (int)(newY+0.5));
+  Point p((int)(newX+0.5), (int)(newY+0.5), z, w, curColor);
+  
+  drawCurMode(p);
+  //bkVertex2i((int)(newX+0.5), (int)(newY+0.5));
   
   return;
 }
 
 /**
  * Specifies the 4-vector x,y,z,1
+ * Default value for z is 0
  */
-void bkgl::bkVertex3f(float x, float y, float z)
+void bkgl::bkVertex3f(float x, float y, float z=0)
 {
   bkVertex4f(x,y,z,1);
   return;

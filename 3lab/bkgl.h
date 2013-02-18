@@ -12,6 +12,8 @@
 #include <algorithm>
 
 #include <assert.h>
+
+#include "Point.h"
 using namespace std;
 
 // Globals
@@ -23,7 +25,6 @@ using namespace std;
 // typedefs
 typedef cml::matrix44d_c Matrix;
 typedef cml::vector4f Color;
-typedef cml::vector2i Point;
 typedef vector<Point> Line;
 
 class bkgl
@@ -53,7 +54,7 @@ public:
     ~bkgl();
     
     //TODO make a point class
-    static bool pointCompareY(Point p1, Point p2) {return (p1[1] < p2[1]);}
+    static bool pointCompareY(Point p1, Point p2) {return (p1 < p2);}
     
     const float * getRaster(void);
     
@@ -61,18 +62,20 @@ public:
     bool isInViewport(int x, int y);
     
     void setPixel(int x, int y, float r, float g, float b);
-    Color getPixelColor(int x, int y);
+    void setPixel(Point p);
+    //Color getPixelColor(int x, int y);
     
-    bool savePoints(int x, int y, int n);
+    bool savePoints(Point p, int n);
     void clearSavedPoints();
-    float pointDistance(int x1, int y1, int x2, int y2);
+    float pointDistance(int, int, int, int);
     
     Color colorInterpolation(Color c1, Color c2, float fraction);
     
-    Line drawLine(int x1, int y1, int x2, int y2);
+    void drawCurMode(Point p);
+    Line drawLine(Point p1, Point p2);
     void drawTriangle(Point p1, Point p2, Point p3);
     void drawQuad(Point p1, Point p2, Point p3, Point p4);
-    void drawStrip(int x, int y);
+    void drawStrip(Point p);
     void fillPolygon(Line l);
     
     Matrix createMatrix(const double* m);
