@@ -31,6 +31,9 @@ class bkgl
 {
 private:    
     float raster[SCREENWIDTH*SCREENHEIGHT*3];
+    float zbuffer[SCREENWIDTH*SCREENHEIGHT];
+    
+    bool depthTest;
     
     int drawMode;
     int lineWidth;
@@ -49,21 +52,14 @@ private:
     
     cml::vector4i viewport;
     
-public:
-    bkgl();
-    ~bkgl();
+    void zbuffer_init(void);
     
-    //TODO make a point class
-    static bool pointCompareY(Point p1, Point p2) {return (p1 < p2);}
-    
-    const float * getRaster(void);
-    
-    bool isInScreen(int x, int y);
-    bool isInViewport(int x, int y);
+    bool isInScreen(Point p);
+    bool isInViewport(Point p);
+    bool checkzbuffer(Point p);
     
     void setPixel(int x, int y, float r, float g, float b);
     void setPixel(Point p);
-    //Color getPixelColor(int x, int y);
     
     bool savePoints(Point p, int n);
     void clearSavedPoints();
@@ -79,6 +75,15 @@ public:
     void fillPolygon(Line l);
     
     Matrix createMatrix(const double* m);
+    
+public:
+    bkgl();
+    ~bkgl();
+    
+    //TODO make a point class
+    static bool pointCompareY(Point p1, Point p2) {return (p1 < p2);}
+    
+    const float * getRaster(void);
     
     void bkLineWidth(int w);
     void bkClearColor(float r, float g, float b, float a);

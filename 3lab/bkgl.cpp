@@ -9,10 +9,11 @@ bkgl::bkgl()
 {
   lineWidth = 0;
   pointMode -1;
-  //firstPoint = NULL;
   
-  curColor = Color(1,1,1,1);
-  clearColor = Color(1,1,1,1);
+  depthTest = false;
+  
+  curColor.set(1,1,1,1);
+  clearColor.set(1,1,1,1);
   
   I.set( 1, 0, 0, 0,
 		 0, 1, 0, 0,
@@ -23,6 +24,8 @@ bkgl::bkgl()
   
   modelViewStack.push(I);
   projectionStack.push(I);
+  
+  zbuffer_init();
 }
 
 /**
@@ -33,6 +36,12 @@ bkgl::~bkgl()
   return;
 }
 
+void bkgl::zbuffer_init()
+{
+  for (int i=0; i<SCREENWIDTH*SCREENHEIGHT; i++)
+	zbuffer[i] = 1;
+}
+
 const float * bkgl::getRaster()
 {
   return raster;
@@ -41,30 +50,31 @@ const float * bkgl::getRaster()
 /**
  * Returns true if x,y is in the screen space
  */
-bool bkgl::isInScreen(int x, int y)
+bool bkgl::isInScreen(Point p)
 {
-  return x>=0 && x<SCREENWIDTH && y>=0 && y<SCREENHEIGHT;
+  return p.x>=0 && p.x<SCREENWIDTH &&
+		 p.y>=0 && p.y<SCREENHEIGHT;
 }
 
 /**
  * Returns true if x,y is in the viewport
  */
-bool bkgl::isInViewport(int x, int y)
+bool bkgl::isInViewport(Point p)
 {
-  return x>=viewport[0] && x<viewport[0]+viewport[2] && y>=viewport[1] && y<viewport[1]+viewport[3];
+  return p.x>=viewport[0] && p.x<viewport[0]+viewport[2] &&
+		 p.y>=viewport[1] && p.y<viewport[1]+viewport[3];
 }
 
 /**
- * Set pixle color r,g,b in raster for x,y
+ * Returns true if z < zbuffer
  */
-void bkgl::setPixel(int x, int y, float r, float g, float b)
+bool bkgl::checkzbuffer(Point p)
 {
-    if (isInScreen(x,y) && isInViewport(x,y))
-  {
-	raster[((y*SCREENWIDTH) + x)*3 + 0] = r;
-	raster[((y*SCREENWIDTH) + x)*3 + 1] = g;
-	raster[((y*SCREENWIDTH) + x)*3 + 2] = b;
-  }
+  if (depthTest)
+	return p.z < zbuffer[(p.y*SCREENWIDTH) + p.x] &&
+		   p.z >= -1 && p.z <= 1;
+  else
+	return true;
 }
 
 /**
@@ -72,25 +82,15 @@ void bkgl::setPixel(int x, int y, float r, float g, float b)
  */
 void bkgl::setPixel(Point p)
 {
-  setPixel(p.x, p.y, p.color[0], p.color[1], p.color[2]);
+  if (isInScreen(p) && isInViewport(p) && checkzbuffer(p))
+  {
+	raster[((p.y*SCREENWIDTH) + p.x)*3 + 0] = p.color[0];
+	raster[((p.y*SCREENWIDTH) + p.x)*3 + 1] = p.color[1];
+	raster[((p.y*SCREENWIDTH) + p.x)*3 + 2] = p.color[2];
+	if (depthTest)
+	  zbuffer[(p.y*SCREENWIDTH) + p.x] = p.z;
+  }
 }
-
-/**
- * Gets the color of the pixel specified by x,y
- */
-//Color bkgl::getPixelColor(int x, int y)
-//{
-//  //TODO make one for point
-//  Color c = clearColor;
-//  if (isInScreen(x,y) && isInViewport(x,y))
-//  {
-//	c[0] = raster[((y*SCREENWIDTH) + x)*3 + 0];
-//	c[1] = raster[((y*SCREENWIDTH) + x)*3 + 1];
-//	c[2] = raster[((y*SCREENWIDTH) + x)*3 + 2];
-//  }
-//  
-//  return c;
-//}
 
 /**
  * Saves n points for drawing 
@@ -176,6 +176,16 @@ Color bkgl::colorInterpolation(Color COLOR1, Color COLOR2, float fraction)
 }
 
 /**
+ * Interpolate the z coordinates
+ */
+float zInterpolation(float z1, float z2, float fraction)
+{
+  fraction = min(fraction, 1.0f);
+  fraction = max(fraction, 0.0f);
+  return ((z2 - z1) * fraction) + z1;
+}
+
+/**
  * Draws a line with interpolated colors
  */
 //Line bkgl::drawLine(int x1, int y1, int x2, int y2)
@@ -189,12 +199,12 @@ Line bkgl::drawLine(Point p1, Point p2)
   Line line;
   
   float dy = y2 - y1;
-  float dx = x2 - x1;
+  float dx = x2 - x1;  
   float m = dy / dx;			// slope
   float b = y1 - m*(float)x1;	// intercept
   
-  Color cStart = p1.getColor();//getPixelColor(x1, y1);
-  Color cEnd = p2.getColor();//getPixelColor(x2, y2);
+  Color cStart = p1.getColor();
+  Color cEnd = p2.getColor();
   
   int xStart = x1;
   int yStart = y1;
@@ -214,23 +224,34 @@ Line bkgl::drawLine(Point p1, Point p2)
 	  d1 = pointDistance(xStart, yStart, x1, ys);
 	  d2 = pointDistance(xStart, yStart, x2, y2);
 	  Color c = colorInterpolation(cStart, cEnd, d1/d2);
+	  
+	  float z = zInterpolation(p1.z, p2.z, d1/d2);
+	  
+	  Point p(x1, ys, z, 1, c);
+	  
 	  if (y1 == y2)
 	  {
 		for (int i=0; i<=lineWidth/2; i++)
 		{
-		  setPixel(x1, ys+i, c[0], c[1], c[2]);
-		  setPixel(x1, ys-i, c[0], c[1], c[2]);
+		  p.set_y(ys+i);
+		  setPixel(p);
+		  p.set_y(ys-i);
+		  setPixel(p);
 		}
+		p.set_y(ys);
 	  }
 	  else
 	  {
 		for (int i=0; i<=lineWidth/2; i++)
 		{
-		  setPixel(x1+i, ys, c[0], c[1], c[2]);
-		  setPixel(x1-i, ys, c[0], c[1], c[2]);
+		  p.set_x(x1+i);
+		  setPixel(p);
+		  p.set_x(x1-i);
+		  setPixel(p);
 		}
+		p.set_x(x1);
 	  }
-	  line.push_back(Point(x1,(int)ys, p1.z, p1.w, c)); //TODO interpolate z
+	  line.push_back(p); 
 	}
   }
   else 												// slope >=1
@@ -243,12 +264,20 @@ Line bkgl::drawLine(Point p1, Point p2)
 	  d1 = pointDistance(xStart, yStart, x1, y1);
 	  d2 = pointDistance(xStart, yStart, x2, y2);
 	  Color c = colorInterpolation(cStart, cEnd, d1/d2);
+	  
+	  float z = zInterpolation(p1.z, p2.z, d1/d2);
+	  
+	  Point p(x1, y1, z, 1, c);
+	  
 	  for (int i=0; i<=lineWidth/2; i++)
 	  {
-		setPixel(x1+i, y1, c[0], c[1], c[2]);
-		setPixel(x1-i, y1, c[0], c[1], c[2]);
+		p.set_x(x1+i);
+		setPixel(p);
+		p.set_x(x1-i);
+		setPixel(p);
 	  }
-	  line.push_back(Point(x1,y1, p1.z, p1.w, c));	//TODO interpolate z
+	  p.set_x(x1);
+	  line.push_back(p);
 	}
   }
   
@@ -365,15 +394,22 @@ void bkgl::bkClearColor(float r, float g, float b, float a)
  */
 void bkgl::bkClear(GLint bit)
 {
+  Point p;
+  if (bit & GL_DEPTH_BUFFER_BIT)
+  {
+	p.set_z(1);
+	zbuffer_init();
+  }
   
-  //TODO check for GL_DEPTH_BUFFER_BIT,
-  //TODO and will clear only the current viewport, rather than the whole screen.
+  p.setColor(clearColor);
   
-  //TODO what is this bit?!?!?!
   for (int x=0; x<SCREENWIDTH; x++)
 	for (int y=0; y<SCREENHEIGHT; y++)
-	  setPixel(x,y, clearColor[0], clearColor[1], clearColor[2]);
-  return;
+	{
+	  p.set_x(x);
+	  p.set_y(y);
+	  setPixel(p);
+	}
 }
 
 /**
@@ -403,7 +439,6 @@ void bkgl::bkEnd()
   }
   pointMode = -1;
   clearSavedPoints();
-  //TODO clear more stuff
 }
 
 /**
@@ -411,8 +446,14 @@ void bkgl::bkEnd()
  */
 void bkgl::bkEnable(GLenum cap)
 {
-  //TODO
-  return;
+  switch (cap)
+  {
+	case GL_DEPTH_BUFFER_BIT:
+	  depthTest = true;
+	  break;
+	default:
+	  break;
+  }
 }
 
 /**
@@ -420,8 +461,14 @@ void bkgl::bkEnable(GLenum cap)
  */
 void bkgl::bkDisable(GLenum cap)
 {
-  //TDOO
-  return;
+  switch (cap)
+  {
+	case GL_DEPTH_BUFFER_BIT:
+	  depthTest = false;
+	  break;
+	default:
+	  break;
+  }
 }
 
 /**
@@ -627,9 +674,6 @@ void bkgl::bkVertex4f(float x, float y, float z, float w=1)
   Matrix P = projectionStack.top();
   Matrix M = modelViewStack.top();
   
-  //cerr << "P: " << P << endl;
-  //cerr << "M: " << M << endl;
-  
   cml::vector4f world(x,y,z,w);
   cml::vector4f tmp = P*M*world;
   tmp = (1.0/tmp[3])*tmp;
@@ -637,15 +681,9 @@ void bkgl::bkVertex4f(float x, float y, float z, float w=1)
   double newX = (((tmp[0]+1)/2.0)*viewport[2])+viewport[0];
   double newY = (((tmp[1]+1)/2.0)*viewport[3])+viewport[1];
   
-  //cerr << "newX: " << newX << endl;
-  //cerr << "newY: " << newY << endl;
-  
-  Point p((int)(newX+0.5), (int)(newY+0.5), z, w, curColor);
+  Point p((int)(newX+0.5), (int)(newY+0.5), tmp[2], tmp[3], curColor);
   
   drawCurMode(p);
-  //bkVertex2i((int)(newX+0.5), (int)(newY+0.5));
-  
-  return;
 }
 
 /**
@@ -696,8 +734,8 @@ void bkgl::bkColor3f(float r, float g, float b)
  */
 void bkgl::bkRotatef(float angle, float x, float y, float z)
 {
-  double c = cos(angle);
-  double s = sin(angle);
+  double c = cos(PI*angle/180);
+  double s = sin(PI*angle/180);
   
   cml::vector3f v(x,y,z);
   
