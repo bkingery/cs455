@@ -116,6 +116,7 @@ public:
     
     void bkFixedScalef(float sx, float sy, float sz, float cx, float cy, float cz);
     void bkShearf(float sxy, float sxz, float syx, float syz, float szx, float szy);
+    void bkFullRotatef(float ang, float ax, float ay, float az, float bx, float by, float bz);
     
 };
 

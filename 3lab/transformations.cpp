@@ -246,6 +246,7 @@ void bk_glScalef(float x, float y, float z)
   bk.bkScalef(x,y,z);
 }
 
+
 /**
  * describes a transformation that produces a parallel projection.
  */
@@ -277,6 +278,15 @@ void bk_glShearf(float sxy, float sxz, float syx, float syz, float szx, float sz
   glMultMatrixd(S.data());
   
   bk.bkShearf(sxy, sxz, syx, syz, szx, szy);
+}
+
+void bk_glFullRotatef(float ang, float ax, float ay, float az, float bx, float by, float bz)
+{
+  glTranslatef(ax, ay, az);
+  glRotatef(ang, bx, by, bz);
+  glTranslatef(-ax, -ay, -az);
+  
+  bk.bkFullRotatef(ang, ax,ay,az, bx,by,bz);
 }
 
 /**
@@ -547,6 +557,25 @@ void draw()
 	  bk_glEnd();
 	  break;
 	}
+	case 12:
+	{
+	  bk_glLoadIdentity();
+	  bk_glBegin(GL_TRIANGLES);
+		bk_glColor3f(0.5,0.2,1);
+		bk_glVertex3f(0.5,0.1,0);
+		bk_glVertex3f(0.8,0.1,0);
+		bk_glVertex3f(0.65,0.4,0);
+	  bk_glEnd();
+	  bk_glFullRotatef(90, 0.5,0.1,0, 0,0,1);
+	  bk_glBegin(GL_TRIANGLES);
+		bk_glColor3f(0.1,0.2,1);
+		bk_glVertex3f(0.5,0.1,0);
+		bk_glVertex3f(0.8,0.1,0);
+		bk_glVertex3f(0.65,0.4,0);
+	  bk_glEnd();
+	  bk_glRotatef(-90,0,0,1);
+	  break;
+	}
 	default:
 	  break;
   }
@@ -630,11 +659,11 @@ void arrow_keys ( int a_keys, int x, int y )
   switch (a_keys)
   {
     case GLUT_KEY_UP:     				// When Up Arrow Is Pressed...
-      drawMode = (drawMode+1)%12;
+      drawMode = (drawMode+1)%13;
       display();
       break;
     case GLUT_KEY_DOWN:               	// When Down Arrow Is Pressed...
-      if ((drawMode=drawMode-1) < 0) drawMode=11;
+      if ((drawMode=drawMode-1) < 0) drawMode=12;
       display();
       break;
     default:
