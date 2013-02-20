@@ -905,6 +905,13 @@ void bkgl::bkShearf(float sxy, float sxz, float syx, float syz, float szx, float
   bkMultMatrixd(S.data());
 }
 
+void bkgl::bkFullRotate(float ang, float ax, float ay, float az, float bx, float by, float bz)
+{
+  bkTranslatef(ax, ay, az);
+  bkRotatef(ang, bx, by, bz);
+  bkTranslatef(-ax, -ay, -az);
+}
+
 
 
 
