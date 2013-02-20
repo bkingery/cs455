@@ -255,6 +255,12 @@ void bk_glOrtho(double left, double right, double bottom, double top, double zNe
   bk.bkOrtho(left, right, bottom, top, zNear, zFar);
 }
 
+void bk_glFixedScalef(float sx, float sy, float sz, float cx, float cy, float cz)
+{
+  //TODO OpenGL
+  bk.bkFixedScalef(sx,sy,sz, cx,cy,cz);
+}
+
 /**
  * Used for testing matrix stack functionality
  */
@@ -485,6 +491,28 @@ void draw()
 	  bk_glLoadIdentity();
 	  break;
 	}
+	case 10: //Fixed Scale
+	{
+	  bk_glLoadIdentity();
+	  bk_gBegin(GL_TRIANGLES);
+		bk_glColor3f(0.9,0.5,1);
+		bk_glVertex3f(0.5,0.4,0);
+		bk_glVertex3f(0.8,0.4,0);
+		bk_glVertex3f(0.65,0.9,0);
+	  bk_glEnd();
+	  bk_glFixedScalef(0.8,0.7,1, 0.5, 0.4, 0);
+	  bk_gBegin(GL_TRIANGLES);
+		bk_glColor3f(0.9,0.5,1);
+		bk_glVertex3f(0.5,0.4,0);
+		bk_glVertex3f(0.8,0.4,0);
+		bk_glVertex3f(0.65,0.9,0);
+	  bk_glEnd();
+	  break;
+	}
+	case 11: //Shear
+	{
+	  break;
+	}
 	default:
 	  break;
   }
@@ -568,11 +596,11 @@ void arrow_keys ( int a_keys, int x, int y )
   switch (a_keys)
   {
     case GLUT_KEY_UP:     				// When Up Arrow Is Pressed...
-      drawMode = (drawMode+1)%10;
+      drawMode = (drawMode+1)%12;
       display();
       break;
     case GLUT_KEY_DOWN:               	// When Down Arrow Is Pressed...
-      if ((drawMode=drawMode-1) < 0) drawMode=9;
+      if ((drawMode=drawMode-1) < 0) drawMode=11;
       display();
       break;
     default:

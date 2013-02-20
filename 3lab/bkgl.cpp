@@ -879,12 +879,20 @@ void bkgl::bkOrtho(double left, double right, double bottom, double top, double 
   bkMultMatrixd(data);
 }
 
-void bkgl::bkFixedScale(float sx, float sy, float sz, float cx, float cy, float cz)
+/**
+ * Scale such that cx, cy,cz does not move
+ */
+void bkgl::bkFixedScalef(float sx, float sy, float sz, float cx, float cy, float cz)
 {
-  return;
+  bkTranslatef(-cx, -cy, -cz);
+  bkScalef(sx, sy, sz);
+  bkTranslatef(cx, cy, cz);
 }
 
-void bkgl::bkShear(float sxy, float sxz, float syx, float syz, float szx, float szy)
+/**
+ * Shearing, where x moves sxy * y, etc
+ */
+void bkgl::bkShearf(float sxy, float sxz, float syx, float syz, float szx, float szy)
 {
   return;
 }

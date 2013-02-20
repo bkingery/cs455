@@ -114,8 +114,8 @@ public:
     void bkScalef(float x, float y, float z);
     void bkOrtho(double left, double right, double bottom, double top, double zNear, double zFar);
     
-    void bkFixedScale(float sx, float sy, float sz, float cx, float cy, float cz);
-    void bkShear(float sxy, float sxz, float syx, float syz, float szx, float szy);
+    void bkFixedScalef(float sx, float sy, float sz, float cx, float cy, float cz);
+    void bkShearf(float sxy, float sxz, float syx, float syz, float szx, float szy);
     
 };
 
