@@ -57,6 +57,7 @@ private:
     bool isInScreen(Point p);
     bool isInViewport(Point p);
     bool checkzbuffer(Point p);
+    bool checkzclipping(Point p);
     
     void setPixel(int x, int y, float r, float g, float b);
     void setPixel(Point p);
@@ -112,6 +113,9 @@ public:
     void bkTranslatef(float x, float y, float z);
     void bkScalef(float x, float y, float z);
     void bkOrtho(double left, double right, double bottom, double top, double zNear, double zFar);
+    
+    void bkFixedScale(float sx, float sy, float sz, float cx, float cy, float cz);
+    void bkShear(float sxy, float sxz, float syx, float syz, float szx, float szy);
     
 };
 

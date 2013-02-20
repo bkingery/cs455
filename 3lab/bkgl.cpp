@@ -71,10 +71,17 @@ bool bkgl::isInViewport(Point p)
 bool bkgl::checkzbuffer(Point p)
 {
   if (depthTest)
-	return p.z < zbuffer[(p.y*SCREENWIDTH) + p.x] &&
-		   p.z >= -1 && p.z <= 1;
+	return p.z < zbuffer[(p.y*SCREENWIDTH) + p.x];
   else
 	return true;
+}
+
+/**
+ * Returns true if z is between -1 and 1
+ */
+bool bkgl::checkzclipping(Point p)
+{
+  return p.z >= -1 && p.z <= 1;
 }
 
 /**
@@ -82,7 +89,7 @@ bool bkgl::checkzbuffer(Point p)
  */
 void bkgl::setPixel(Point p)
 {
-  if (isInScreen(p) && isInViewport(p) && checkzbuffer(p))
+  if (isInScreen(p) && isInViewport(p) && checkzbuffer(p) && checkzclipping(p))
   {
 	raster[((p.y*SCREENWIDTH) + p.x)*3 + 0] = p.color[0];
 	raster[((p.y*SCREENWIDTH) + p.x)*3 + 1] = p.color[1];
@@ -448,7 +455,7 @@ void bkgl::bkEnable(GLenum cap)
 {
   switch (cap)
   {
-	case GL_DEPTH_BUFFER_BIT:
+	case GL_DEPTH_TEST:
 	  depthTest = true;
 	  break;
 	default:
@@ -463,7 +470,7 @@ void bkgl::bkDisable(GLenum cap)
 {
   switch (cap)
   {
-	case GL_DEPTH_BUFFER_BIT:
+	case GL_DEPTH_TEST:
 	  depthTest = false;
 	  break;
 	default:
@@ -756,8 +763,6 @@ void bkgl::bkRotatef(float angle, float x, float y, float z)
 			0,					0,					0,					1 );
   
   bkMultMatrixd(R.data());
-  
-  return;
 }
 
 /**
@@ -779,12 +784,14 @@ void bkgl::bkRotatef(float angle, float x, float y, float z)
  */
 void bkgl::bkTranslatef(float x, float y, float z)
 {
-  Matrix T(	1,	0,	0,	x,
-			0,	1,	0,	y,
-			0,	0,	1,	z,
-			0,	0,	0,	1 );
+//  Matrix T(	1,	0,	0,	x,
+//			0,	1,	0,	y,
+//			0,	0,	1,	z,
+//			0,	0,	0,	1 );
   
-  bkMultMatrixd(T.data());
+  double data[] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1};
+  //bkMultMatrixd(T.data());
+  bkMultMatrixd(data);
 }
 
 /**
@@ -809,12 +816,14 @@ void bkgl::bkTranslatef(float x, float y, float z)
  */
 void bkgl::bkScalef(float x, float y, float z)
 {
-  Matrix S(	x,	0,	0,	0,
-			0,	y,	0,	0,
-			0,	0,	z,	0,
-			0,	0,	0,	1 );
+//  Matrix S(	x,	0,	0,	0,
+//			0,	y,	0,	0,
+//			0,	0,	z,	0,
+//			0,	0,	0,	1 );
   
-  bkMultMatrixd(S.data());
+  double data[] = {x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1};
+  //bkMultMatrixd(S.data());
+  bkMultMatrixd(data);
 }
 
 /**
@@ -859,12 +868,44 @@ void bkgl::bkOrtho(double left, double right, double bottom, double top, double 
   double ty = - (top + bottom) / (top - bottom);
   double tz = - (zFar + zNear) / (zFar - zNear);
   
-  Matrix O(	2/(right-left),	0,				0,					tx,
-			0,				2/(top-bottom),	0,					ty,
-			0,				0,				-2/(zFar-zNear),	tz,
-			0,				0,				0,					1 );
+//  Matrix O(	2/(right-left),	0,				0,					tx,
+//			0,				2/(top-bottom),	0,					ty,
+//			0,				0,				-2/(zFar-zNear),	tz,
+//			0,				0,				0,					1 );
   
-  bkMultMatrixd(O.data());
+  double data[] = {2/(right-left), 0, 0, 0, 0, 2/(top-bottom), 0, 0, 0, 0, -2/(zFar-zNear), 0, tx, ty, tz, 1};
+  
+  //bkMultMatrixd(O.data());
+  bkMultMatrixd(data);
 }
+
+void bkgl::bkFixedScale(float sx, float sy, float sz, float cx, float cy, float cz)
+{
+  return;
+}
+
+void bkgl::bkShear(float sxy, float sxz, float syx, float syz, float szx, float szy)
+{
+  return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
