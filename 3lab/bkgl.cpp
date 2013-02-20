@@ -884,9 +884,12 @@ void bkgl::bkOrtho(double left, double right, double bottom, double top, double 
  */
 void bkgl::bkFixedScalef(float sx, float sy, float sz, float cx, float cy, float cz)
 {
-  bkTranslatef(-cx, -cy, -cz);
-  bkScalef(sx, sy, sz);
-  bkTranslatef(cx, cy, cz);
+    Matrix FS(sx,	0,	0,	cx - cx * sx,
+			  0, 	sy,	0,	cy - cy * sy, 
+			  0, 	0,	sz,	cz,
+			  0, 	0,	0,	1);
+  
+  bkMultMatrixd(FS.data());
 }
 
 /**
@@ -894,7 +897,12 @@ void bkgl::bkFixedScalef(float sx, float sy, float sz, float cx, float cy, float
  */
 void bkgl::bkShearf(float sxy, float sxz, float syx, float syz, float szx, float szy)
 {
-  return;
+  Matrix S(1, 	sxy, 	sxz, 	0,
+		   syx,	1,		syz,	0,
+		   szx,	szy,	1,		0,
+		   0,	0,		0,		1);
+  
+  bkMultMatrixd(S.data());
 }
 
 

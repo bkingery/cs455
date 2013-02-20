@@ -256,9 +256,27 @@ void bk_glOrtho(double left, double right, double bottom, double top, double zNe
 }
 
 void bk_glFixedScalef(float sx, float sy, float sz, float cx, float cy, float cz)
-{
-  //TODO OpenGL
+{  
+  Matrix FS(sx,	0,	0,	cx - cx * sx,
+            0, 	sy,	0,	cy - cy * sy, 
+            0, 	0,	sz,	cz,
+            0, 	0,	0,	1);
+  
+  glMultMatrixd(FS.data());
+
   bk.bkFixedScalef(sx,sy,sz, cx,cy,cz);
+}
+
+void bk_glShearf(float sxy, float sxz, float syx, float syz, float szx, float szy)
+{
+  Matrix S(1, 	sxy, 	sxz, 	0,
+		   syx,	1,		syz,	0,
+		   szx,	szy,	1,		0,
+		   0,	0,		0,		1);
+  
+  glMultMatrixd(S.data());
+  
+  bk.bkShearf(sxy, sxz, syx, syz, szx, szy);
 }
 
 /**
@@ -494,15 +512,15 @@ void draw()
 	case 10: //Fixed Scale
 	{
 	  bk_glLoadIdentity();
-	  bk_gBegin(GL_TRIANGLES);
+	  bk_glBegin(GL_TRIANGLES);
 		bk_glColor3f(0.9,0.5,1);
 		bk_glVertex3f(0.5,0.4,0);
 		bk_glVertex3f(0.8,0.4,0);
 		bk_glVertex3f(0.65,0.9,0);
 	  bk_glEnd();
 	  bk_glFixedScalef(0.8,0.7,1, 0.5, 0.4, 0);
-	  bk_gBegin(GL_TRIANGLES);
-		bk_glColor3f(0.9,0.5,1);
+	  bk_glBegin(GL_TRIANGLES);
+		bk_glColor3f(0.8,0.7,0);
 		bk_glVertex3f(0.5,0.4,0);
 		bk_glVertex3f(0.8,0.4,0);
 		bk_glVertex3f(0.65,0.9,0);
@@ -511,6 +529,22 @@ void draw()
 	}
 	case 11: //Shear
 	{
+	  bk_glLoadIdentity();
+	  bk_glBegin(GL_QUADS);
+		bk_glColor3f(0.33,0.77,0);
+		bk_glVertex3f(0.1,0.1,0);
+		bk_glVertex3f(0.1,0.4,0);
+		bk_glVertex3f(0.4,0.4,0);
+		bk_glVertex3f(0.4,0.1,0);
+	  bk_glEnd();
+	  bk_glShearf(0.8, 0, 0.8, 0, 0, 0);
+	  bk_glBegin(GL_QUADS);
+		bk_glColor3f(0.77,0.2,0.3);
+		bk_glVertex3f(0.1,0.1,0);
+		bk_glVertex3f(0.1,0.4,0);
+		bk_glVertex3f(0.4,0.4,0);
+		bk_glVertex3f(0.4,0.1,0);
+	  bk_glEnd();
 	  break;
 	}
 	default:
