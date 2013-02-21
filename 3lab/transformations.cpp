@@ -528,13 +528,28 @@ void draw()
 		bk_glVertex3f(0.8,0.4,0);
 		bk_glVertex3f(0.65,0.9,0);
 	  bk_glEnd();
-	  bk_glFixedScalef(0.8,0.7,1, 0.5, 0.4, 0);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.8,0.7,0);
-		bk_glVertex3f(0.5,0.4,0);
-		bk_glVertex3f(0.8,0.4,0);
-		bk_glVertex3f(0.65,0.9,0);
-	  bk_glEnd();
+	  for (float i=0.8; i>0; i=i-0.1)
+	  {
+		bk_glLoadIdentity();
+		bk_glFixedScalef(i, i, 1, 0.5, 0.4, 0);
+		bk_glBegin(GL_TRIANGLES);
+		  bk_glColor3f(i,i,0);
+		  bk_glVertex3f(0.5,0.4,0);
+		  bk_glVertex3f(0.8,0.4,0);
+		  bk_glVertex3f(0.65,0.9,0);
+		bk_glEnd();
+	  }
+	  for (float i=-0.9; i<-0.1; i=i+0.1)
+	  {
+		bk_glLoadIdentity();
+		bk_glFixedScalef(i, i, 1, 0.5, 0.4, 0);
+		bk_glBegin(GL_TRIANGLES);
+		  bk_glColor3f(-i,-i,0);
+		  bk_glVertex3f(0.5,0.4,0);
+		  bk_glVertex3f(0.8,0.4,0);
+		  bk_glVertex3f(0.65,0.9,0);
+		bk_glEnd();
+	  }
 	  break;
 	}
 	case 11: //Shear
@@ -547,7 +562,26 @@ void draw()
 		bk_glVertex3f(0.4,0.4,0);
 		bk_glVertex3f(0.4,0.1,0);
 	  bk_glEnd();
-	  bk_glShearf(0.8, 0, 0.8, 0, 0, 0);
+	  bk_glLoadIdentity();
+	  bk_glShearf(0.9, 0,0,0,0,0);
+	  	  bk_glBegin(GL_QUADS);
+		bk_glColor3f(0.77,0.2,0.3);
+		bk_glVertex3f(0.1,0.1,0);
+		bk_glVertex3f(0.1,0.4,0);
+		bk_glVertex3f(0.4,0.4,0);
+		bk_glVertex3f(0.4,0.1,0);
+	  bk_glEnd();
+	  bk_glLoadIdentity();
+	  bk_glShearf(0, 0, 0.9, 0,0,0);
+	  	  bk_glBegin(GL_QUADS);
+		bk_glColor3f(0.77,0.2,0.3);
+		bk_glVertex3f(0.1,0.1,0);
+		bk_glVertex3f(0.1,0.4,0);
+		bk_glVertex3f(0.4,0.4,0);
+		bk_glVertex3f(0.4,0.1,0);
+	  bk_glEnd();
+	  bk_glLoadIdentity();
+	  bk_glShearf(0.9, 0, 0.9, 0, 0, 0);
 	  bk_glBegin(GL_QUADS);
 		bk_glColor3f(0.77,0.2,0.3);
 		bk_glVertex3f(0.1,0.1,0);
@@ -557,23 +591,36 @@ void draw()
 	  bk_glEnd();
 	  break;
 	}
-	case 12:
+	case 12: //Full rotate
 	{
+	//  bk_glLoadIdentity();
+	//  bk_glBegin(GL_TRIANGLES);
+	//	bk_glColor3f(0.5,0.2,1);
+	//	bk_glVertex3f(0.5,0.1,0);
+	//	bk_glVertex3f(0.8,0.1,0);
+	//	bk_glVertex3f(0.65,0.4,0);
+	//  bk_glEnd();
+	  for (int i=0; i<8; i++)
+	  {
+		bk_glFullRotatef(i*45, 0.5,0.1,0, 0,0,1);
+		bk_glBegin(GL_TRIANGLES);
+		  bk_glColor3f(0.1*i,0.2,1);
+		  bk_glVertex3f(0.5,0.1,0);
+		  bk_glVertex3f(0.8,0.1,0);
+		  bk_glVertex3f(0.65,0.4,0);
+		bk_glEnd();
+	  }
 	  bk_glLoadIdentity();
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.5,0.2,1);
-		bk_glVertex3f(0.5,0.1,0);
-		bk_glVertex3f(0.8,0.1,0);
-		bk_glVertex3f(0.65,0.4,0);
-	  bk_glEnd();
-	  bk_glFullRotatef(90, 0.5,0.1,0, 0,0,1);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.1,0.2,1);
-		bk_glVertex3f(0.5,0.1,0);
-		bk_glVertex3f(0.8,0.1,0);
-		bk_glVertex3f(0.65,0.4,0);
-	  bk_glEnd();
-	  bk_glRotatef(-90,0,0,1);
+	  for (int i=0; i<8; i++)
+	  {
+		bk_glFullRotatef(i*45, -0.5,0.1,0, 1,1,1);
+		bk_glBegin(GL_TRIANGLES);
+		  bk_glColor3f(0.1*i,0.2,1);
+		  bk_glVertex3f(-0.5,0.1,0);
+		  bk_glVertex3f(-0.8,0.1,0);
+		  bk_glVertex3f(-0.65,0.4,0);
+		bk_glEnd();
+	  }
 	  break;
 	}
 	default:
