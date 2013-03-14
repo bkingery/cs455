@@ -14,6 +14,7 @@
 using namespace std;
 
 bool drawMine;
+bool reDraw;
 int drawMode;
 
 bkgl bk;
@@ -28,6 +29,7 @@ void init ()
   glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
   
   drawMine = false;
+  reDraw = true;
   drawMode = 0;
 }
 
@@ -37,7 +39,7 @@ void init ()
 void bk_glLineWidth(int w)
 {
   glLineWidth(w);
-  bk.bkLineWidth(w);
+  if (drawMine && reDraw) bk.bkLineWidth(w);
 }
 
 /**
@@ -47,7 +49,7 @@ void bk_glLineWidth(int w)
 void bk_glClearColor(float r, float g, float b, float a)
 {
   glClearColor(r,g,b,a);
-  bk.bkClearColor(r,g,b,a);
+  if (drawMine && reDraw) bk.bkClearColor(r,g,b,a);
 }
 
 /**
@@ -56,7 +58,7 @@ void bk_glClearColor(float r, float g, float b, float a)
 void bk_glClear(GLint bit)
 {
   glClear(bit);
-  bk.bkClear(bit);
+  if (drawMine && reDraw) bk.bkClear(bit);
 }
 
 /**
@@ -66,7 +68,7 @@ void bk_glClear(GLint bit)
 void bk_glBegin(GLenum mode)
 {
   glBegin(mode);
-  bk.bkBegin(mode);
+  if (drawMine && reDraw) bk.bkBegin(mode);
 }
 
 /**
@@ -76,7 +78,7 @@ void bk_glBegin(GLenum mode)
 void bk_glEnd()
 {
   glEnd();
-  bk.bkEnd();
+  if (drawMine && reDraw) bk.bkEnd();
 }
 
 /**
@@ -85,7 +87,7 @@ void bk_glEnd()
 void bk_glEnable(GLenum cap)
 {
   glEnable(cap);
-  bk.bkEnable(cap);
+  if (drawMine && reDraw) bk.bkEnable(cap);
 }
 
 /**
@@ -94,7 +96,7 @@ void bk_glEnable(GLenum cap)
 void bk_glDisable(GLenum cap)
 {
   glDisable(cap);
-  bk.bkDisable(cap);
+  if (drawMine && reDraw) bk.bkDisable(cap);
 }
 
 /**
@@ -103,7 +105,7 @@ void bk_glDisable(GLenum cap)
 void bk_glViewport(int x, int y, int width, int height)
 {
   glViewport(x,y,width,height);
-  bk.bkViewport(x,y,width,height);
+  if (drawMine && reDraw) bk.bkViewport(x,y,width,height);
 }
 
 /**
@@ -113,7 +115,7 @@ void bk_glViewport(int x, int y, int width, int height)
 void bk_glMatrixMode(GLenum e)
 {
   glMatrixMode(e);
-  bk.bkMatrixMode(e);
+  if (drawMine && reDraw) bk.bkMatrixMode(e);
 }
 
 /**
@@ -124,7 +126,7 @@ void bk_glMatrixMode(GLenum e)
 void bk_glPushMatrix()
 {
   glPushMatrix();
-  bk.bkPushMatrix();
+  if (drawMine && reDraw) bk.bkPushMatrix();
 }
 
 /**
@@ -134,7 +136,7 @@ void bk_glPushMatrix()
 void bk_glPopMatrix()
 {
   glPopMatrix();
-  bk.bkPopMatrix();
+  if (drawMine && reDraw) bk.bkPopMatrix();
 }
 
 /**
@@ -145,7 +147,7 @@ void bk_glPopMatrix()
 void bk_glLoadIdentity()
 {
   glLoadIdentity();
-  bk.bkLoadIdentity();
+  if (drawMine && reDraw) bk.bkLoadIdentity();
 }
 
 /**
@@ -156,7 +158,7 @@ void bk_glLoadIdentity()
 void bk_glLoadMatrixd(const double* m)
 {
   glLoadMatrixd(m);
-  bk.bkLoadMatrixd(m);
+  if (drawMine && reDraw) bk.bkLoadMatrixd(m);
 }
 
 /**
@@ -166,7 +168,7 @@ void bk_glLoadMatrixd(const double* m)
 void bk_glMultMatrixd(const double* m)
 {
   glMultMatrixd(m);
-  bk.bkMultMatrixd(m);
+  if (drawMine && reDraw) bk.bkMultMatrixd(m);
 }
 
 /**
@@ -179,7 +181,7 @@ void bk_glMultMatrixd(const double* m)
 void bk_glVertex2i(int x, int y)
 {
   glVertex2i(x,y);
-  bk.bkVertex2i(x,y);
+  if (drawMine && reDraw) bk.bkVertex2i(x,y);
 }
 
 /**
@@ -188,7 +190,7 @@ void bk_glVertex2i(int x, int y)
 void bk_glVertex4f(float x, float y, float z, float w)
 {
   glVertex4f(x,y,z,w);
-  bk.bkVertex4f(x,y,z,w);
+  if (drawMine && reDraw) bk.bkVertex4f(x,y,z,w);
 }
 
 /**
@@ -197,7 +199,7 @@ void bk_glVertex4f(float x, float y, float z, float w)
 void bk_glVertex3f(float x, float y, float z)
 {
   glVertex3f(x,y,z);
-  bk.bkVertex3f(x,y,z);
+  if (drawMine && reDraw) bk.bkVertex3f(x,y,z);
 }
 
 /**
@@ -206,7 +208,7 @@ void bk_glVertex3f(float x, float y, float z)
 void bk_glVertex2f(float x, float y)
 {
   glVertex2f(x,y);
-  bk.bkVertex2f(x,y);
+  if (drawMine && reDraw) bk.bkVertex2f(x,y);
 }
 
 /**
@@ -216,7 +218,7 @@ void bk_glVertex2f(float x, float y)
 void bk_glColor3f(float r, float g, float b)
 {
   glColor3f(r,g,b);
-  bk.bkColor3f(r,g,b);
+  if (drawMine && reDraw) bk.bkColor3f(r,g,b);
 }
 
 /**
@@ -225,7 +227,7 @@ void bk_glColor3f(float r, float g, float b)
 void bk_glRotatef(float angle, float x, float y, float z)
 {
   glRotatef(angle,x,y,z);
-  bk.bkRotatef(angle,x,y,z);
+  if (drawMine && reDraw) bk.bkRotatef(angle,x,y,z);
 }
 
 /**
@@ -234,7 +236,7 @@ void bk_glRotatef(float angle, float x, float y, float z)
 void bk_glTranslatef(float x, float y, float z)
 {
   glTranslatef(x,y,z);
-  bk.bkTranslatef(x,y,z);
+  if (drawMine && reDraw) bk.bkTranslatef(x,y,z);
 }
 
 /**
@@ -243,7 +245,7 @@ void bk_glTranslatef(float x, float y, float z)
 void bk_glScalef(float x, float y, float z)
 {
   glScalef(x,y,z);
-  bk.bkScalef(x,y,z);
+  if (drawMine && reDraw) bk.bkScalef(x,y,z);
 }
 
 
@@ -253,7 +255,7 @@ void bk_glScalef(float x, float y, float z)
 void bk_glOrtho(double left, double right, double bottom, double top, double zNear, double zFar)
 {
   glOrtho(left, right, bottom, top, zNear, zFar);
-  bk.bkOrtho(left, right, bottom, top, zNear, zFar);
+  if (drawMine && reDraw) bk.bkOrtho(left, right, bottom, top, zNear, zFar);
 }
 
 void bk_glFixedScalef(float sx, float sy, float sz, float cx, float cy, float cz)
@@ -265,7 +267,7 @@ void bk_glFixedScalef(float sx, float sy, float sz, float cx, float cy, float cz
   
   glMultMatrixd(FS.data());
 
-  bk.bkFixedScalef(sx,sy,sz, cx,cy,cz);
+  if (drawMine && reDraw) bk.bkFixedScalef(sx,sy,sz, cx,cy,cz);
 }
 
 void bk_glShearf(float sxy, float sxz, float syx, float syz, float szx, float szy)
@@ -277,7 +279,7 @@ void bk_glShearf(float sxy, float sxz, float syx, float syz, float szx, float sz
   
   glMultMatrixd(S.data());
   
-  bk.bkShearf(sxy, sxz, syx, syz, szx, szy);
+  if (drawMine && reDraw) bk.bkShearf(sxy, sxz, syx, syz, szx, szy);
 }
 
 void bk_glFullRotatef(float ang, float ax, float ay, float az, float bx, float by, float bz)
@@ -286,35 +288,31 @@ void bk_glFullRotatef(float ang, float ax, float ay, float az, float bx, float b
   glRotatef(ang, bx, by, bz);
   glTranslatef(-ax, -ay, -az);
   
-  bk.bkFullRotatef(ang, ax,ay,az, bx,by,bz);
+  if (drawMine && reDraw) bk.bkFullRotatef(ang, ax,ay,az, bx,by,bz);
 }
 
-/**
- * Used for testing matrix stack functionality
- */
-void tree(int depth)
+void bk_glFrustum(double left, double right, double bottom, double top, double near, double far)
 {
-  static const double r2 = 1/sqrt(2);
-  static const double mdown[16] = { 0,-r2,0,0, r2,0,0,0, 0,0,1,0, 0,-r2,0,1 };
-  static const double mup[16] = { 0,r2,0,0, -r2,0,0,0, 0,0,1,0, 0,r2,0,1 };
-  if (depth <= 0) return;
-  bk_glBegin(GL_LINES);
-	bk_glVertex2f(0,-r2);
-	bk_glVertex2f(0, r2);
-  bk_glEnd();
-  
-  bk_glPushMatrix();
-  bk_glMultMatrixd(mdown);
-  
-  tree(depth-1);
-  
-  bk_glPopMatrix();
-  bk_glPushMatrix();
-  bk_glMultMatrixd(mup);
-  
-  tree(depth-1);
-  
-  bk_glPopMatrix();
+  glFrustum(left, right, bottom, top, near, far);
+  if (drawMine && reDraw) bk.bkFrustum(left, right, bottom, top, near, far);
+}
+
+void bk_gluPerspective(double fovy, double aspect, double near, double far)
+{
+  gluPerspective(fovy, aspect, near, far);
+  if (drawMine && reDraw) bk.bkuPerspective(fovy, aspect, near, far);
+}
+
+void bk_glNormal3f(float nx, float ny, float nz)
+{
+  glNormal3f(nx, ny, nz);
+  if (drawMine && reDraw) bk.bkNormal3f(nx, ny, nz);
+}
+
+void bk_glLightfv(GLenum light, GLenum pname, const float *params)
+{
+  glLightfv(light, pname, params);
+  if (drawMine && reDraw) bk.bkLightfv(light, pname, params);
 }
 
 /**
@@ -328,302 +326,136 @@ void draw()
   
   switch (drawMode)
   {
-	case 0://Viewport transformation
+	case 0: //Perspective projection Frustrum
 	{
-	  bk_glViewport(0,0,320,240);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0,1,0);
-		bk_glVertex3f(-1,0,0);
-		bk_glVertex3f(0,-0.8,0);
-		bk_glVertex3f(0.5,0.8,0);
-	  bk_glEnd();
-	  bk_glViewport(320,240,320,240);
+	  bk_glMatrixMode(GL_PROJECTION);
+	  bk_glLoadIdentity();
+	  bk_glFrustum(-0.1,0.1, -0.1*480/640,0.1*480/640, 0.1,10);
+	  bk_glMatrixMode(GL_MODELVIEW);
+	  bk_glLoadIdentity();
+	  
 	  bk_glBegin(GL_TRIANGLES);
 		bk_glColor3f(0,0,1);
-		bk_glVertex3f(-1,0.8,0);
-		bk_glVertex3f(0.1,-0.8,0);
-		bk_glVertex3f(0.5,0.8,0);
-	  bk_glEnd();
-	  //Restore your viewport to the whole screen
-	  bk_glViewport(0,0,SCREENWIDTH,SCREENHEIGHT);
-	  break;
-	}
-	case 1:	//Divide-by-w
-	{
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(1,0,0);
-		bk_glVertex4f(-1,0.2,0,1);
-		bk_glVertex4f(0,0.8,0,1);
-		bk_glVertex4f(1,0.2,0,1);
+		bk_glVertex3f(-0.4,-0.6,-1);
+		bk_glVertex3f(0.4,-0.6,-1);
+		bk_glVertex3f(0.4,-0.1,-1);
+		bk_glVertex3f(0.4,-0.1,-1);
+		bk_glVertex3f(-0.4,-0.1,-1);
+		bk_glVertex3f(-0.4,-0.6,-1);
 		bk_glColor3f(1,0,1);
-		bk_glVertex4f(-1,-0.8,0,2);
-		bk_glVertex4f(0,-0.2,0,2);
-		bk_glVertex4f(1,-0.8,0,2);
-	  bk_glEnd();
+		bk_glVertex3f(-0.4,-0.1,-1);
+		bk_glVertex3f(0.4,-0.1,-1);
+		bk_glVertex3f(0.3,0,-2);
+		bk_glVertex3f(0.3,0,-2);
+		bk_glVertex3f(-0.3,0,-2);
+		bk_glVertex3f(-0.4,-0.1,-1);
+	  glEnd();
 	  break;
 	}
-	case 2:	//Depth buffer
+	case 1: //Perspective projection uPerspective
 	{
-	  bk_glEnable(GL_DEPTH_TEST);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0,1,1);
-		bk_glVertex3f(-0.5,0.2,0.5);
-		bk_glVertex3f(0,-0.5,0);
-		bk_glVertex3f(0.5,0.2,-0.5);
-		bk_glColor3f(1,1,0);
-		bk_glVertex3f(-0.5,-0.2,-0.5);
-		bk_glVertex3f(0,0.5,0);
-		bk_glVertex3f(0.5,-0.2,0.5);
-	  bk_glEnd();
-	  bk_glDisable(GL_DEPTH_TEST);
-	  break;
-	}
-	case 3: //Easy point clipping
-	{
-	  bk_glEnable(GL_DEPTH_TEST);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.5,1,1);
-		bk_glVertex3f(0.5,0,0);
-		bk_glVertex3f(0,0.5,-2);
-		bk_glVertex3f(0,-0.5,2);
-	  bk_glEnd();
-	  bk_glViewport(50,50,200,400);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(1,1,0.5);
-		bk_glVertex3f(-1.4,-1.2,-0.5);
-		bk_glVertex3f(0,1.2,0);
-		bk_glVertex3f(1.5,-0.2,0.5);
-	  bk_glEnd();
-	  //Restore your viewport to the whole screen
-	  bk_glViewport(0,0,SCREENWIDTH,SCREENHEIGHT);
-	  bk_glDisable(GL_DEPTH_TEST);
-	  break;
-	}
-	case 4:	//Matrix manipulation
-	{
-	  double translate[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, -1.2,0.3,0,1};
-	  double rotate[16] = {cos(PI/2),sin(PI/2),0,0, -sin(PI/2),cos(PI/2),0,0, 0,0,1,0, 0,0,0,1};
+	  bk_glMatrixMode(GL_PROJECTION);
 	  bk_glLoadIdentity();
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.5,0.2,1);
-		bk_glVertex3f(0.5,0.1,0);
-		bk_glVertex3f(0.8,0.1,0);
-		bk_glVertex3f(0.65,0.4,0);
-	  bk_glEnd();
-	  bk_glLoadMatrixd(translate);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.5,0.8,0.2);
-		bk_glVertex3f(0.5,0.1,0);
-		bk_glVertex3f(0.8,0.1,0);
-		bk_glVertex3f(0.65,0.4,0);
-	  bk_glEnd();
+	  bk_gluPerspective(90, double(640)/480, 0.1, 10);
+	  bk_glMatrixMode(GL_MODELVIEW);
 	  bk_glLoadIdentity();
+	  
 	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.2,0.6,1);
-		bk_glVertex3f(0.5,-0.4,0);
-		bk_glVertex3f(0.8,-0.4,0);
-		bk_glVertex3f(0.65,-0.7,0);
-	  bk_glEnd();
-	  bk_glLoadMatrixd(rotate);
-	  bk_glMultMatrixd(translate);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.9,0.2,0.4);
-		bk_glVertex3f(0.5,-0.4,0);
-		bk_glVertex3f(0.8,-0.4,0);
-		bk_glVertex3f(0.65,-0.7,0);
-	  bk_glEnd();
-	  bk_glLoadIdentity();
-	  break;
-	}
-	case 5:	//Matrix stacks
-	{
-	  bk_glColor3f(0,255,255);
-	  tree(8);
-	  break;
-	}
-	case 6:	//Rotate
-	{
-	  bk_glLoadIdentity();
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.5,0.2,1);
-		bk_glVertex3f(0.5,0.1,0);
-		bk_glVertex3f(0.8,0.1,0);
-		bk_glVertex3f(0.65,0.4,0);
-	  bk_glEnd();
-	  bk_glRotatef(90,0,0,1);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.1,0.2,1);
-		bk_glVertex3f(0.5,0.1,0);
-		bk_glVertex3f(0.8,0.1,0);
-		bk_glVertex3f(0.65,0.4,0);
-	  bk_glEnd();
-	  bk_glRotatef(-90,0,0,1);
-	  break;
-	}
-	case 7: //Translate
-	{
-	  bk_glLoadIdentity();
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.33,0.77,0);
-		bk_glVertex3f(0.5,0.1,0);
-		bk_glVertex3f(0.8,0.1,0);
-		bk_glVertex3f(0.65,0.4,0);
-	  bk_glEnd();
-	  bk_glTranslatef(-1,-1,0);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.77,0.2,0.3);
-		bk_glVertex3f(0.5,0.1,0);
-		bk_glVertex3f(0.8,0.1,0);
-		bk_glVertex3f(0.65,0.4,0);
-	  bk_glEnd();
-	  bk_glTranslatef(1,1,0);
-	  break;
-	}
-	case 8:	//Scale
-	{
-	  bk_glLoadIdentity();
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.9,0.5,1);
-		bk_glVertex3f(0.5,0.4,0);
-		bk_glVertex3f(0.8,0.4,0);
-		bk_glVertex3f(0.65,0.9,0);
-	  bk_glEnd();
-	  bk_glScalef(0.8,0.7,1);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.8,0.7,0);
-		bk_glVertex3f(0.5,0.1,0);
-		bk_glVertex3f(0.8,0.1,0);
-		bk_glVertex3f(0.65,0.4,0);
-	  bk_glEnd();
-	  bk_glScalef(-0.8, 0.7,1);
-	  break;
-	}
-	case 9:	//Ortho
-	{
-	  bk_glLoadIdentity();
-	  bk_glOrtho(0,640,0,480,-1,1);
-	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(1,0,0);
-		bk_glVertex3f(300,300,0);
-		bk_glColor3f(0,1,0);
-		bk_glVertex3f(600,300,0);
 		bk_glColor3f(0,0,1);
-		bk_glVertex3f(450,410,0);
-		bk_glColor3f(1,1,0);
-		bk_glVertex3f(100,400,0);
-		bk_glColor3f(0,1,1);
-		bk_glVertex3f(70,60,0);
+		bk_glVertex3f(-0.4,-0.6,-1);
+		bk_glVertex3f(0.4,-0.6,-1);
+		bk_glVertex3f(0.4,-0.1,-1);
+		bk_glVertex3f(0.4,-0.1,-1);
+		bk_glVertex3f(-0.4,-0.1,-1);
+		bk_glVertex3f(-0.4,-0.6,-1);
 		bk_glColor3f(1,0,1);
-		bk_glVertex3f(350,100,0);
+		bk_glVertex3f(-0.4,-0.1,-1);
+		bk_glVertex3f(0.4,-0.1,-1);
+		bk_glVertex3f(0.3,0,-2);
+		bk_glVertex3f(0.3,0,-2);
+		bk_glVertex3f(-0.3,0,-2);
+		bk_glVertex3f(-0.4,-0.1,-1);
 	  bk_glEnd();
-	  bk_glLoadIdentity();
 	  break;
 	}
-	case 10: //Fixed Scale
+	case 2: //Gouraud Shading
 	{
+	  bk_glMatrixMode(GL_PROJECTION);
 	  bk_glLoadIdentity();
+	  bk_glMatrixMode(GL_MODELVIEW);
+	  bk_glLoadIdentity();
+	  bk_glEnable(GL_NORMALIZE);
+	  bk_glEnable(GL_LIGHTING);
+	  bk_glEnable(GL_COLOR_MATERIAL);
+	  bk_glEnable(GL_LIGHT0);
+	  float diffuse_color[4] = {1.0,1.0,1.0,1};
+	  float ambient_color[4] = {0.1,0.1,0.1,1};
+	  float position[4] = {0,3,-10,1};
+	  bk_glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_color);
+	  bk_glLightfv(GL_LIGHT0, GL_AMBIENT, ambient_color);
+	  bk_glLightfv(GL_LIGHT0, GL_POSITION, position);
+	  
+	  bk_glColor3f(1,0,0);
+	  float dp = PI/16; // 16 picked arbitrarily; try other numbers too
 	  bk_glBegin(GL_TRIANGLES);
-		bk_glColor3f(0.9,0.5,1);
-		bk_glVertex3f(0.5,0.4,0);
-		bk_glVertex3f(0.8,0.4,0);
-		bk_glVertex3f(0.65,0.9,0);
+	  for(float theta = 0; theta < 2*PI; theta+=dp){
+		for(float phi = 0; phi < PI; phi+=dp){
+		  bk_glNormal3f(cos(theta)*sin(phi), cos(phi), sin(theta)*sin(phi));
+		  bk_glVertex3f(cos(theta)*sin(phi), cos(phi), sin(theta)*sin(phi));
+		  bk_glNormal3f(cos(theta+dp)*sin(phi), cos(phi), sin(theta+dp)*sin(phi));
+		  bk_glVertex3f(cos(theta+dp)*sin(phi), cos(phi), sin(theta+dp)*sin(phi));
+		  bk_glNormal3f(cos(theta+dp)*sin(phi+dp), cos(phi+dp), sin(theta+dp)*sin(phi+dp));
+		  bk_glVertex3f(cos(theta+dp)*sin(phi+dp), cos(phi+dp), sin(theta+dp)*sin(phi+dp));
+		  bk_glNormal3f(cos(theta)*sin(phi), cos(phi), sin(theta)*sin(phi));
+		  bk_glVertex3f(cos(theta)*sin(phi), cos(phi), sin(theta)*sin(phi));
+		  bk_glNormal3f(cos(theta+dp)*sin(phi+dp), cos(phi+dp), sin(theta+dp)*sin(phi+dp));
+		  bk_glVertex3f(cos(theta+dp)*sin(phi+dp), cos(phi+dp), sin(theta+dp)*sin(phi+dp));
+		  bk_glNormal3f(cos(theta)*sin(phi+dp), cos(phi+dp), sin(theta)*sin(phi+dp));
+		  bk_glVertex3f(cos(theta)*sin(phi+dp), cos(phi+dp), sin(theta)*sin(phi+dp));
+		}
+	  }
 	  bk_glEnd();
-	  for (float i=0.8; i>0; i=i-0.1)
-	  {
-		bk_glLoadIdentity();
-		bk_glFixedScalef(i, i, 1, 0.5, 0.4, 0);
-		bk_glBegin(GL_TRIANGLES);
-		  bk_glColor3f(i,i,0);
-		  bk_glVertex3f(0.5,0.4,0);
-		  bk_glVertex3f(0.8,0.4,0);
-		  bk_glVertex3f(0.65,0.9,0);
-		bk_glEnd();
-	  }
-	  for (float i=-0.9; i<-0.1; i=i+0.1)
-	  {
-		bk_glLoadIdentity();
-		bk_glFixedScalef(i, i, 1, 0.5, 0.4, 0);
-		bk_glBegin(GL_TRIANGLES);
-		  bk_glColor3f(-i,-i,0);
-		  bk_glVertex3f(0.5,0.4,0);
-		  bk_glVertex3f(0.8,0.4,0);
-		  bk_glVertex3f(0.65,0.9,0);
-		bk_glEnd();
-	  }
+	  bk_glDisable(GL_LIGHTING);
 	  break;
 	}
-	case 11: //Shear
+	case 3:
 	{
-	  bk_glLoadIdentity();
-	  bk_glBegin(GL_QUADS);
-		bk_glColor3f(0.33,0.77,0);
-		bk_glVertex3f(0.1,0.1,0);
-		bk_glVertex3f(0.1,0.4,0);
-		bk_glVertex3f(0.4,0.4,0);
-		bk_glVertex3f(0.4,0.1,0);
-	  bk_glEnd();
-	  bk_glLoadIdentity();
-	  bk_glShearf(0.9, 0,0,0,0,0);
-	  	  bk_glBegin(GL_QUADS);
-		bk_glColor3f(0.77,0.2,0.3);
-		bk_glVertex3f(0.1,0.1,0);
-		bk_glVertex3f(0.1,0.4,0);
-		bk_glVertex3f(0.4,0.4,0);
-		bk_glVertex3f(0.4,0.1,0);
-	  bk_glEnd();
-	  bk_glLoadIdentity();
-	  bk_glShearf(0, 0, 0.9, 0,0,0);
-	  	  bk_glBegin(GL_QUADS);
-		bk_glColor3f(0.77,0.2,0.3);
-		bk_glVertex3f(0.1,0.1,0);
-		bk_glVertex3f(0.1,0.4,0);
-		bk_glVertex3f(0.4,0.4,0);
-		bk_glVertex3f(0.4,0.1,0);
-	  bk_glEnd();
-	  bk_glLoadIdentity();
-	  bk_glShearf(0.9, 0, 0.9, 0, 0, 0);
-	  bk_glBegin(GL_QUADS);
-		bk_glColor3f(0.77,0.2,0.3);
-		bk_glVertex3f(0.1,0.1,0);
-		bk_glVertex3f(0.1,0.4,0);
-		bk_glVertex3f(0.4,0.4,0);
-		bk_glVertex3f(0.4,0.1,0);
-	  bk_glEnd();
 	  break;
 	}
-	case 12: //Full rotate
+	case 4:
 	{
-	  bk_glEnable(GL_DEPTH_TEST);
-	  bk_glLoadIdentity();
-	//  bk_glBegin(GL_TRIANGLES);
-	//	bk_glColor3f(0.5,0.2,1);
-	//	bk_glVertex3f(0.5,0.1,0);
-	//	bk_glVertex3f(0.8,0.1,0);
-	//	bk_glVertex3f(0.65,0.4,0);
-	//  bk_glEnd();
-	  for (int i=0; i<8; i++)
-	  {
-		bk_glFullRotatef(i*45, 0.5,0.1,0, 0,0,1);
-		bk_glBegin(GL_TRIANGLES);
-		  bk_glColor3f(0.1*i,0.2,1);
-		  bk_glVertex3f(0.5,0.1,0);
-		  bk_glVertex3f(0.8,0.1,0);
-		  bk_glVertex3f(0.65,0.4,0);
-		bk_glEnd();
-	  }
-	  bk_glLoadIdentity();
-	  for (int i=0; i<8; i++)
-	  {
-		bk_glFullRotatef(i*45, -0.5,0.1,0, 1,1,1);
-		bk_glBegin(GL_TRIANGLES);
-		  bk_glColor3f(0.1*i,0.2,1);
-		  bk_glVertex3f(-0.5,0.1,0);
-		  bk_glVertex3f(-0.8,0.1,0);
-		  bk_glVertex3f(-0.65,0.4,0);
-		bk_glEnd();
-	  }
-	  bk_glLoadIdentity();
-	  bk_glDisable(GL_DEPTH_TEST);
+	  break;
+	}
+	case 5:
+	{
+	  break;
+	}
+	case 6:
+	{
+	  break;
+	}
+	case 7:
+	{
+	  break;
+	}
+	case 8:
+	{
+	  break;
+	}
+	case 9:
+	{
+	  break;
+	}
+	case 10:
+	{
+	  break;
+	}
+	case 11:
+	{
+	  break;
+	}
+	case 12:
+	{
 	  break;
 	}
 	default:
@@ -636,6 +468,7 @@ void draw()
  */
 void myDraw()
 {
+  reDraw = false;
   // Save the old state so that you can set it back after you draw
   GLint oldmatrixmode;
   GLboolean depthWasEnabled = glIsEnabled(GL_DEPTH_TEST);
@@ -710,10 +543,12 @@ void arrow_keys ( int a_keys, int x, int y )
   {
     case GLUT_KEY_UP:     				// When Up Arrow Is Pressed...
       drawMode = (drawMode+1)%13;
+	  reDraw = true;
       display();
       break;
     case GLUT_KEY_DOWN:               	// When Down Arrow Is Pressed...
       if ((drawMode=drawMode-1) < 0) drawMode=12;
+	  reDraw = true;
       display();
       break;
     default:
