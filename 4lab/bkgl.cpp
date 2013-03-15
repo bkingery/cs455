@@ -18,6 +18,9 @@ bkgl::bkgl()
   curColor.set(1,1,1,1);
   clearColor.set(1,1,1,1);
   curNormal.set(1,1,1,0);
+  curShineColor.set(0,0,0,1);
+  
+  curShininess = 0;
   
   I.set( 1, 0, 0, 0,
 		 0, 1, 0, 0,
@@ -97,20 +100,34 @@ cml::vector4f bkgl::elementwise_mult(const cml::vector4f& v1, const cml::vector4
 
 /**
  */
-cml::vector4f bkgl::calculateLight(Point point)
+Color bkgl::applyLightToColor(cml::vector4f light, Color color)
 {
-  cml::vector4f world(point.x, point.y, point.z, point.w);
-  cml::vector4f p = modelViewStack.top()*world;
+  Color newcolor = color;
+  if (gllighting and !glcolormaterial)
+	newcolor = elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), cml::vector4f(0.8, 0.8, 0.8, 1));
+  
+  if (gllighting and glcolormaterial)
+	newcolor = elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), color);
+  
+  return newcolor;
+}
+
+/**
+ */
+cml::vector4f bkgl::calculateIntensity(cml::vector4f p, cml::vector4f normal)
+{
   cml::vector4f light(0,0,0,0);
   for (int i=0; i<8; i++)
   {
 	Light l = gllights[i];
 	if (l.isEnabled())
 	{
-	  light += l.getAmbient() + max(0.0, (double)cml::dot(point.normal, (l.getPosition()-p).normalize())) * l.getDiffuse();
+	  light += l.getAmbient()
+				+ max(0.0, (double)cml::dot(normal, (l.getPosition()-p).normalize()))
+				* l.getDiffuse();
 	}
   }
-  //cout << light << endl << endl;
+  
   return light;
 }
 
@@ -121,20 +138,9 @@ void bkgl::setPixel(Point p)
 { 
   if (isInScreen(p) && isInViewport(p) && checkzbuffer(p))
   {
-	//cout << p.color << endl;
-	//cout << p.lightvalue << endl;
-	Color newcolor = p.color;
-	if (gllighting and !glcolormaterial)
-	  newcolor = elementwise_mult(calculateLight(p), cml::vector4f(0.8, 0.8, 0.8, 1)) + cml::vector4f(0.2, 0.2, 0.2, 0);
-	
-	if (gllighting and glcolormaterial)
-	  newcolor = elementwise_mult(calculateLight(p), p.color);
-	
-	//cout << newcolor << endl << endl;
-	
-	raster[((p.y*SCREENWIDTH) + p.x)*3 + 0] = newcolor[0];
-	raster[((p.y*SCREENWIDTH) + p.x)*3 + 1] = newcolor[1];
-	raster[((p.y*SCREENWIDTH) + p.x)*3 + 2] = newcolor[2];
+	raster[((p.y*SCREENWIDTH) + p.x)*3 + 0] = p.color[0];
+	raster[((p.y*SCREENWIDTH) + p.x)*3 + 1] = p.color[1];
+	raster[((p.y*SCREENWIDTH) + p.x)*3 + 2] = p.color[2];
 	if (gldepthTest)
 	  zbuffer[(p.y*SCREENWIDTH) + p.x] = p.z;
   }
@@ -250,8 +256,8 @@ Line bkgl::drawLine(Point p1, Point p2)
   float m = dy / dx;			// slope
   float b = y1 - m*(float)x1;	// intercept
   
-  Color cStart = p1.getColor();
-  Color cEnd = p2.getColor();
+  Color cStart 	= p1.getColor();
+  Color cEnd 	= p2.getColor();
   Normal normal = p1.normal;
   
   int xStart = x1;
@@ -276,7 +282,6 @@ Line bkgl::drawLine(Point p1, Point p2)
 	  float z = zInterpolation(p1.z, p2.z, d1/d2);
 	  
 	  Point p(x1, ys, z, 1, c, normal);
-	  //p.setLightValue(p1.lightvalue);
 	  
 	  if (y1 == y2)
 	  {
@@ -316,7 +321,6 @@ Line bkgl::drawLine(Point p1, Point p2)
 	  float z = zInterpolation(p1.z, p2.z, d1/d2);
 	  
 	  Point p(x1, y1, z, 1, c, normal);
-	  //p.setLightValue(p1.lightvalue);
 	  
 	  for (int i=0; i<=lineWidth/2; i++)
 	  {
@@ -596,16 +600,8 @@ void bkgl::updateInverseTransposeModelview()
 {
   if (curMatrixStack == &modelViewStack)
   {
-	//cout << curMatrixStack << endl;
-	//cout << &modelViewStack << endl;
-	//cout << "ITM" << endl;
 	Matrix M = curMatrixStack->top();
-	//cout << M << endl << endl;
-	M.inverse();
-	//cout << M << endl << endl;
-	M.transpose();
-	//cout << M << endl;
-	inverseTransposeModelview = M;
+	inverseTransposeModelview = M.transpose().inverse();
   }
 }
 
@@ -653,7 +649,6 @@ void bkgl::bkLoadIdentity()
  */
 void bkgl::bkLoadMatrixd(const double* m)
 {
-  //TODO fix pop/push to be loadmatrix?
   Matrix M = createMatrix(m);
   curMatrixStack->pop();
   curMatrixStack->push(M);
@@ -667,7 +662,6 @@ void bkgl::bkLoadMatrixd(const double* m)
  */
 void bkgl::bkMultMatrixd(const double* m)
 {
-  //TODO fix pop/push to be loadmatrix?
   Matrix M = createMatrix(m);
   Matrix C = curMatrixStack->top();
   curMatrixStack->pop();
@@ -788,17 +782,29 @@ void bkgl::bkVertex4f(float x, float y, float z, float w=1)
   Matrix P = projectionStack.top();
   Matrix M = modelViewStack.top();
   
+  //Normal
+  Normal n = inverseTransposeModelview*curNormal;
+  
   cml::vector4f world(x,y,z,w);
+  
+  //Modelview
   cml::vector4f p = M*world;
+  
+  cml::vector4f light = calculateIntensity(p, n);
+  
+  //Projection
   cml::vector4f tmp = P*p;
+  
+  //Divide by w
   tmp = (1.0/tmp[3])*tmp;
   
+  //Size to viewport
   double newX = (((tmp[0]+1)/2.0)*viewport[2])+viewport[0];
   double newY = (((tmp[1]+1)/2.0)*viewport[3])+viewport[1];
   
-  Normal n = inverseTransposeModelview*curNormal;
+  Color newColor = applyLightToColor(light, curColor);
   
-  Point point((int)(newX+0.5), (int)(newY+0.5), tmp[2], tmp[3], curColor, n);
+  Point point((int)(newX+0.5), (int)(newY+0.5), tmp[2], tmp[3], newColor, n);
   
   drawCurMode(point);
 }
@@ -1068,19 +1074,46 @@ void bkgl::bkNormal3f(float nx, float ny, float nz)
  */
 void bkgl::bkLightfv(GLenum light, GLenum pname, const float *params)
 {
-  Light l = gllights[light-GL_LIGHT0]; //GL_LIGHT0 == 16384
+  int i = light-GL_LIGHT0; //GL_LIGHT0 == 16384
   
   switch (pname)
   {
 	case GL_DIFFUSE:
-	  l.setDiffuse(params);
-	  cout << l.getDiffuse() << endl;
+	  gllights[i].setDiffuse(params);
 	  break;
 	case GL_AMBIENT:
-	  l.setAmbient(params);
+	  gllights[i].setAmbient(params);
 	  break;
 	case GL_POSITION:
-	  l.setPosition(params);
+	  gllights[i].setPosition(params);
+	  break;
+	case GL_SPECULAR:
+	  gllights[i].setSpecular(params);
+	default:
+	  break;
+  }
+}
+
+/**
+ */
+void bkgl::bkMaterialf(GLenum face, GLenum pname, float param)
+{
+  switch (face)
+  {
+	case GL_FRONT_AND_BACK:
+	  curShininess = param;
+	  break;
+	default:
+	  break;
+  }
+}
+
+void bkgl::bkMaterialfv(GLenum face, GLenum pname, const float *params)
+{
+  switch (face)
+  {
+	case GL_FRONT_AND_BACK:
+	  curShineColor.set(params[0], params[1], params[2], params[3]);
 	  break;
 	default:
 	  break;

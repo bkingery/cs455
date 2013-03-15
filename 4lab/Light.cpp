@@ -7,6 +7,7 @@ Light::Light()
     diffuse.set(0,0,0,0);
     ambient.set(0,0,0,1);
     position.set(0,0,0,1);
+    specular.set(0,0,0,0);
 }
 
 Light::~Light()
@@ -32,4 +33,9 @@ void Light::setAmbient(const float *a)
 void Light::setPosition(const float *p)
 {
     this->position.set(p[0], p[1], p[2], p[3]);
+}
+
+void Light::setSpecular(const float *s)
+{
+    this->position.set(s[0], s[1], s[2], s[3]);
 }

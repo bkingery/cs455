@@ -10,6 +10,7 @@ class Light
 private:
     Color diffuse;
     Color ambient;
+    Color specular;
     //Position position;
     cml::vector4f position;
     
@@ -25,9 +26,11 @@ public:
     void setDiffuse(const float *d);
     void setAmbient(const float *a);
     void setPosition(const float *p);
+    void setSpecular(const float *s);
     
     Color getDiffuse(){return diffuse;};
     Color getAmbient(){return ambient;};
+    Color getSpecular(){return specular;};
     //Position getPosition(){return position;};
     cml::vector4f getPosition(){return position;};
 };

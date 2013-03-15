@@ -46,6 +46,9 @@ private:
     
     Color curColor;
     Color clearColor;
+    Color curShineColor;
+    
+    float curShininess;
     
     Normal curNormal;
     Matrix inverseTransposeModelview;
@@ -88,7 +91,8 @@ private:
     void updateInverseTransposeModelview();
     
     cml::vector4f elementwise_mult(const cml::vector4f& v1, const cml::vector4f& v2);
-    cml::vector4f calculateLight(Point p);
+    Color applyLightToColor(cml::vector4f light, Color color);
+    Color calculateIntensity(cml::vector4f p, cml::vector4f normal);
     
 public:
     bkgl();
@@ -136,6 +140,8 @@ public:
     
     void bkNormal3f(float nx, float ny, float nz);
     void bkLightfv(GLenum light, GLenum pname, const float *params);
+    void bkMaterialf(GLenum face, GLenum pname, float param);
+    void bkMaterialfv(GLenum face, GLenum pname, const float *params);
     
 };
 
