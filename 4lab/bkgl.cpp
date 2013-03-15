@@ -100,14 +100,14 @@ cml::vector4f bkgl::elementwise_mult(const cml::vector4f& v1, const cml::vector4
 
 /**
  */
-Color bkgl::applyLightToColor(cml::vector4f light, Color color)
+Color bkgl::applyLightToColor(cml::vector4f light, Color color, Color specColor)
 {
   Color newcolor = color;
   if (gllighting and !glcolormaterial)
-	newcolor = elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), cml::vector4f(0.8, 0.8, 0.8, 1));
+	newcolor = elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), cml::vector4f(0.8, 0.8, 0.8, 1))+specColor;
   
   if (gllighting and glcolormaterial)
-	newcolor = elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), color);
+	newcolor = elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), color)+specColor;
   
   return newcolor;
 }
@@ -129,6 +129,28 @@ cml::vector4f bkgl::calculateIntensity(cml::vector4f p, cml::vector4f normal)
   }
   
   return light;
+}
+
+/**
+ */
+Color bkgl::calculateSpcularColor(cml:: vector4f p, cml::vector4f normal)
+{
+  Color specColor(0,0,0,0);
+  for (int i=0; i<8; i++)
+  {
+	Light l = gllights[i];
+	if (l.isEnabled())
+	{
+	  if (cml::dot(normal, (l.getPosition()-p).normalize()) > 0)
+	  {
+		cml::vector4f halfway = ((l.getPosition()-p).normalize() + cml::vector4f(0,0,1,0)).normalize();
+		specColor += max(0.0, (double)pow(cml::dot(normal, halfway), curShininess))
+				  * elementwise_mult(curShineColor, l.getSpecular());
+	  }
+	}
+  }
+  
+  return specColor;
 }
 
 /**
@@ -791,6 +813,7 @@ void bkgl::bkVertex4f(float x, float y, float z, float w=1)
   cml::vector4f p = M*world;
   
   cml::vector4f light = calculateIntensity(p, n);
+  Color specColor = calculateSpcularColor(p, n);
   
   //Projection
   cml::vector4f tmp = P*p;
@@ -802,7 +825,7 @@ void bkgl::bkVertex4f(float x, float y, float z, float w=1)
   double newX = (((tmp[0]+1)/2.0)*viewport[2])+viewport[0];
   double newY = (((tmp[1]+1)/2.0)*viewport[3])+viewport[1];
   
-  Color newColor = applyLightToColor(light, curColor);
+  Color newColor = applyLightToColor(light, curColor, specColor);
   
   Point point((int)(newX+0.5), (int)(newY+0.5), tmp[2], tmp[3], newColor, n);
   

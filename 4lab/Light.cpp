@@ -37,5 +37,5 @@ void Light::setPosition(const float *p)
 
 void Light::setSpecular(const float *s)
 {
-    this->position.set(s[0], s[1], s[2], s[3]);
+    this->specular.set(s[0], s[1], s[2], s[3]);
 }
