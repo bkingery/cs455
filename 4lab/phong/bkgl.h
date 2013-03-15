@@ -93,7 +93,7 @@ private:
     cml::vector4f elementwise_mult(const cml::vector4f& v1, const cml::vector4f& v2);
     Color applyLightToColor(cml::vector4f light, Color color, Color specColor);
     Color calculateIntensity(cml::vector4f p, cml::vector4f normal);
-    Color calculateSpcularColor(cml:: vector4f p, cml::vector4f normal);
+    Color calculateSpecularColor(cml:: vector4f p, cml::vector4f normal);
     
 public:
     bkgl();

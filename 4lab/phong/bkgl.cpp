@@ -133,7 +133,7 @@ cml::vector4f bkgl::calculateIntensity(cml::vector4f p, cml::vector4f normal)
 
 /**
  */
-Color bkgl::calculateSpcularColor(cml:: vector4f p, cml::vector4f normal)
+Color bkgl::calculateSpecularColor(cml:: vector4f p, cml::vector4f normal)
 {
   Color specColor(0,0,0,0);
   for (int i=0; i<8; i++)
@@ -261,6 +261,11 @@ float zInterpolation(float z1, float z2, float fraction)
   return ((z2 - z1) * fraction) + z1;
 }
 
+cml::vector4f interpolateVectors(cml::vector4f v1, cml::vector4f v2, float fraction)
+{
+  return v1*fraction + v2*(1.0f-fraction);
+}
+
 /**
  * Draws a line with interpolated colors
  */
@@ -280,7 +285,18 @@ Line bkgl::drawLine(Point p1, Point p2)
   
   Color cStart 	= p1.getColor();
   Color cEnd 	= p2.getColor();
-  Normal normal = p1.normal;
+  
+  cml::vector4f worldStart	= p1.world;
+  cml::vector4f worldEnd	= p2.world;
+  
+  Normal nStart = p1.normal;
+  Normal nEnd	= p2.normal;
+  
+  cml::vector4f lStart 	= calculateIntensity(p1.world, p1.normal);
+  cml::vector4f lEnd	= calculateIntensity(p2.world, p2.normal);
+  
+  Color specStart 	= calculateSpecularColor(p1.world, p1.normal);
+  Color specEnd		= calculateSpecularColor(p2.world, p2.normal);
   
   int xStart = x1;
   int yStart = y1;
@@ -299,11 +315,18 @@ Line bkgl::drawLine(Point p1, Point p2)
 	  ys = (m*(float)x1+b)+0.5;						// +0.5 for rounding
 	  d1 = pointDistance(xStart, yStart, x1, ys);
 	  d2 = pointDistance(xStart, yStart, x2, y2);
-	  Color c = colorInterpolation(cStart, cEnd, d1/d2);
+	  float distance = d1/d2;
 	  
+	  Color c = colorInterpolation(cStart, cEnd, distance);
 	  float z = zInterpolation(p1.z, p2.z, d1/d2);
+	  cml::vector4f world = interpolateVectors(worldStart, worldEnd, distance);
+	  Normal normal = interpolateVectors(nStart, nEnd, distance);
+	  Color spec = colorInterpolation(specStart, specEnd, distance);
+	  cml::vector4f light = interpolateVectors(lStart, lEnd, distance);
 	  
-	  Point p(x1, ys, z, 1, c, normal);
+	  Color newColor = applyLightToColor(light, c, spec);
+	  
+	  Point p(x1, ys, z, 1, newColor, world, normal);
 	  
 	  if (y1 == y2)
 	  {
@@ -339,10 +362,18 @@ Line bkgl::drawLine(Point p1, Point p2)
 	  x1 = (dx !=0) ? (((float)y1-b)/m)+0.5 : x1;	// make sure dx != 0
 	  d1 = pointDistance(xStart, yStart, x1, y1);
 	  d2 = pointDistance(xStart, yStart, x2, y2);
-	  Color c = colorInterpolation(cStart, cEnd, d1/d2);
-	  float z = zInterpolation(p1.z, p2.z, d1/d2);
+	  float distance = d1/d2;
 	  
-	  Point p(x1, y1, z, 1, c, normal);
+	  Color c = colorInterpolation(cStart, cEnd, distance);
+	  float z = zInterpolation(p1.z, p2.z, distance);
+	  cml::vector4f world = interpolateVectors(worldStart, worldEnd, distance);
+	  Normal normal = interpolateVectors(nStart, nEnd, distance);
+	  Color spec = colorInterpolation(specStart, specEnd, distance);
+	  cml::vector4f light = interpolateVectors(lStart, lEnd, distance);
+	  
+	  Color newColor = applyLightToColor(light, c, spec);
+	  
+	  Point p(x1, y1, z, 1, newColor, world, normal);
 	  
 	  for (int i=0; i<=lineWidth/2; i++)
 	  {
@@ -812,8 +843,8 @@ void bkgl::bkVertex4f(float x, float y, float z, float w=1)
   //Modelview
   cml::vector4f p = M*world;
   
-  cml::vector4f light = calculateIntensity(p, n);
-  Color specColor = calculateSpcularColor(p, n);
+  //cml::vector4f light = calculateIntensity(p, n);
+  //Color specColor = calculateSpcularColor(p, n);
   
   //Projection
   cml::vector4f tmp = P*p;
@@ -825,9 +856,9 @@ void bkgl::bkVertex4f(float x, float y, float z, float w=1)
   double newX = (((tmp[0]+1)/2.0)*viewport[2])+viewport[0];
   double newY = (((tmp[1]+1)/2.0)*viewport[3])+viewport[1];
   
-  Color newColor = applyLightToColor(light, curColor, specColor);
+  //Color newColor = applyLightToColor(light, curColor, specColor);
   
-  Point point((int)(newX+0.5), (int)(newY+0.5), tmp[2], tmp[3], newColor, n);
+  Point point((int)(newX+0.5), (int)(newY+0.5), tmp[2], tmp[3], curColor, p, n/*, specColor, curShininess*/);
   
   drawCurMode(point);
 }

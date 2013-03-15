@@ -12,19 +12,24 @@ Point::Point()
     this->w = 1;
     this->color.set(1,1,1,1);
     this->normal.set(1,1,1,0);
+    //this->specularColor.set(0,0,0,0);
+    //this->shininess = 0;
 }
 
 /**
  * Constructor
  */
-Point::Point(int x, int y, float z, float w, Color c, Normal n)
+Point::Point(int x, int y, float z, float w, Color c, cml::vector4f p, Normal n/*, cml::vector4f sc, float s*/)
 {
     this->x = x;
     this->y = y;
     this->z = z;
     this->w = w;
     this->color.set(c[0], c[1], c[2], c[3]);
+    this->world.set(p[0], p[1], p[2], p[3]);
     this->normal.set(n[0], n[1], n[2], n[3]);
+    //this->specularColor.set(sc[0], sc[1], sc[2], sc[3]);
+    //this->shininess = s;
 }
 
 /**
@@ -33,11 +38,6 @@ Point::Point(int x, int y, float z, float w, Color c, Normal n)
 Point::~Point()
 {
     return;
-}
-
-void Point::setLightValue(LightValue l)
-{
-    this->lightvalue = l;
 }
 
 /**
