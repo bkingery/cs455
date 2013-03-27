@@ -382,6 +382,50 @@ void draw()
 	  bk_glDisable(GL_LIGHTING);
 	  break;
 	}
+	case 1:
+	{
+	  bk_glMatrixMode(GL_PROJECTION);
+	  bk_glLoadIdentity();
+	  bk_glMatrixMode(GL_MODELVIEW);
+	  bk_glLoadIdentity();
+	  bk_glEnable(GL_LIGHTING);
+	  bk_glEnable(GL_COLOR_MATERIAL);
+	  bk_glEnable(GL_LIGHT0);
+	  float diffuse_color[4] = {0.7,0.7,0.7,1};
+	  float ambient_color[4] = {0.1,0.1,0.1,1};
+	  float specular_color[4] = {0,1,0,1};
+	  float position[4] = {1,1,-10,1};
+	  bk_glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_color);
+	  bk_glLightfv(GL_LIGHT0, GL_AMBIENT, ambient_color);
+	  bk_glLightfv(GL_LIGHT0, GL_SPECULAR, specular_color);
+	  bk_glLightfv(GL_LIGHT0, GL_POSITION, position);
+	  float specular_surface_color[4] = {0.0, 1.0, 0.9, 1};
+	  bk_glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular_surface_color);
+	  bk_glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 1);
+	  
+	  bk_glColor3f(1,0,0);
+	  float dp = PI/16; // 16 picked arbitrarily; try other numbers too
+	  bk_glBegin(GL_TRIANGLES);
+	  for(float theta = 0; theta < 2*PI; theta+=dp){
+		for(float phi = 0; phi < PI; phi+=dp){
+		  bk_glNormal3f(cos(theta)*sin(phi), cos(phi), sin(theta)*sin(phi));
+		  bk_glVertex3f(cos(theta)*sin(phi), cos(phi), sin(theta)*sin(phi));
+		  bk_glNormal3f(cos(theta+dp)*sin(phi), cos(phi), sin(theta+dp)*sin(phi));
+		  bk_glVertex3f(cos(theta+dp)*sin(phi), cos(phi), sin(theta+dp)*sin(phi));
+		  bk_glNormal3f(cos(theta+dp)*sin(phi+dp), cos(phi+dp), sin(theta+dp)*sin(phi+dp));
+		  bk_glVertex3f(cos(theta+dp)*sin(phi+dp), cos(phi+dp), sin(theta+dp)*sin(phi+dp));
+		  bk_glNormal3f(cos(theta)*sin(phi), cos(phi), sin(theta)*sin(phi));
+		  bk_glVertex3f(cos(theta)*sin(phi), cos(phi), sin(theta)*sin(phi));
+		  bk_glNormal3f(cos(theta+dp)*sin(phi+dp), cos(phi+dp), sin(theta+dp)*sin(phi+dp));
+		  bk_glVertex3f(cos(theta+dp)*sin(phi+dp), cos(phi+dp), sin(theta+dp)*sin(phi+dp));
+		  bk_glNormal3f(cos(theta)*sin(phi+dp), cos(phi+dp), sin(theta)*sin(phi+dp));
+		  bk_glVertex3f(cos(theta)*sin(phi+dp), cos(phi+dp), sin(theta)*sin(phi+dp));
+		}
+	  }
+	  bk_glEnd();
+	  bk_glDisable(GL_LIGHTING);
+	  break;
+	}
 	default:
 	  break;
   }
@@ -466,12 +510,12 @@ void arrow_keys ( int a_keys, int x, int y )
   switch (a_keys)
   {
     case GLUT_KEY_UP:     				// When Up Arrow Is Pressed...
-      drawMode = (drawMode+1)%13;
+      drawMode = (drawMode+1)%2;
 	  reDraw = true;
       display();
       break;
     case GLUT_KEY_DOWN:               	// When Down Arrow Is Pressed...
-      if ((drawMode=drawMode-1) < 0) drawMode=12;
+      if ((drawMode=drawMode-1) < 0) drawMode=1;
 	  reDraw = true;
       display();
       break;

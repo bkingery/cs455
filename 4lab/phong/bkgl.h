@@ -78,6 +78,9 @@ private:
     float pointDistance(int, int, int, int);
     
     Color colorInterpolation(Color c1, Color c2, float fraction);
+    float zInterpolation(float z1, float z2, float fraction);
+    cml::vector4f interpolateVectors(cml::vector4f v1, cml::vector4f v2, float fraction);
+    Point interpolatePoint(int x, int y, Point start, Point end, float distance);
     
     void drawCurMode(Point p);
     Line drawLine(Point p1, Point p2);

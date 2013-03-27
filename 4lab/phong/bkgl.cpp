@@ -160,9 +160,14 @@ void bkgl::setPixel(Point p)
 { 
   if (isInScreen(p) && isInViewport(p) && checkzbuffer(p))
   {
-	raster[((p.y*SCREENWIDTH) + p.x)*3 + 0] = p.color[0];
-	raster[((p.y*SCREENWIDTH) + p.x)*3 + 1] = p.color[1];
-	raster[((p.y*SCREENWIDTH) + p.x)*3 + 2] = p.color[2];
+	Color light = calculateIntensity(p.world, p.normal.normalize());
+	Color spec  = calculateSpecularColor(p.world, p.normal.normalize());
+  
+	Color newColor = applyLightToColor(light, p.color, spec);
+	
+	raster[((p.y*SCREENWIDTH) + p.x)*3 + 0] = newColor[0];
+	raster[((p.y*SCREENWIDTH) + p.x)*3 + 1] = newColor[1];
+	raster[((p.y*SCREENWIDTH) + p.x)*3 + 2] = newColor[2];
 	if (gldepthTest)
 	  zbuffer[(p.y*SCREENWIDTH) + p.x] = p.z;
   }
@@ -254,16 +259,32 @@ Color bkgl::colorInterpolation(Color COLOR1, Color COLOR2, float fraction)
 /**
  * Interpolate the z coordinates
  */
-float zInterpolation(float z1, float z2, float fraction)
+float bkgl::zInterpolation(float z1, float z2, float fraction)
 {
   fraction = min(fraction, 1.0f);
   fraction = max(fraction, 0.0f);
   return ((z2 - z1) * fraction) + z1;
 }
 
-cml::vector4f interpolateVectors(cml::vector4f v1, cml::vector4f v2, float fraction)
+/**
+ * Interpolate Vectors
+ */
+cml::vector4f bkgl::interpolateVectors(cml::vector4f v1, cml::vector4f v2, float fraction)
 {
-  return v1*fraction + v2*(1.0f-fraction);
+  return ((v2 - v1) * fraction) + v1;
+}
+
+/**
+ */
+Point bkgl::interpolatePoint(int x, int y, Point p1, Point p2, float distance)
+{
+  Color c = colorInterpolation(p1.getColor(), p2.getColor(), distance);
+  float z = zInterpolation(p1.z, p2.z, distance);
+  
+  cml::vector4f world = interpolateVectors(p1.world, p2.world, distance);
+  Normal normal = interpolateVectors(p1.normal, p2.normal, distance);
+  
+  return Point(x, y, z, 0, c, world, normal);
 }
 
 /**
@@ -282,21 +303,6 @@ Line bkgl::drawLine(Point p1, Point p2)
   float dx = x2 - x1;  
   float m = dy / dx;			// slope
   float b = y1 - m*(float)x1;	// intercept
-  
-  Color cStart 	= p1.getColor();
-  Color cEnd 	= p2.getColor();
-  
-  cml::vector4f worldStart	= p1.world;
-  cml::vector4f worldEnd	= p2.world;
-  
-  Normal nStart = p1.normal;
-  Normal nEnd	= p2.normal;
-  
-  cml::vector4f lStart 	= calculateIntensity(p1.world, p1.normal);
-  cml::vector4f lEnd	= calculateIntensity(p2.world, p2.normal);
-  
-  Color specStart 	= calculateSpecularColor(p1.world, p1.normal);
-  Color specEnd		= calculateSpecularColor(p2.world, p2.normal);
   
   int xStart = x1;
   int yStart = y1;
@@ -317,39 +323,12 @@ Line bkgl::drawLine(Point p1, Point p2)
 	  d2 = pointDistance(xStart, yStart, x2, y2);
 	  float distance = d1/d2;
 	  
-	  Color c = colorInterpolation(cStart, cEnd, distance);
-	  float z = zInterpolation(p1.z, p2.z, d1/d2);
-	  cml::vector4f world = interpolateVectors(worldStart, worldEnd, distance);
-	  Normal normal = interpolateVectors(nStart, nEnd, distance);
-	  Color spec = colorInterpolation(specStart, specEnd, distance);
-	  cml::vector4f light = interpolateVectors(lStart, lEnd, distance);
-	  
-	  Color newColor = applyLightToColor(light, c, spec);
-	  
-	  Point p(x1, ys, z, 1, newColor, world, normal);
+	  Point p = interpolatePoint(x1, ys, p1, p2, distance);
 	  
 	  if (y1 == y2)
-	  {
-		for (int i=0; i<=lineWidth/2; i++)
-		{
-		  p.set_y(ys+i);
 		  setPixel(p);
-		  p.set_y(ys-i);
-		  setPixel(p);
-		}
-		p.set_y(ys);
-	  }
 	  else
-	  {
-		for (int i=0; i<=lineWidth/2; i++)
-		{
-		  p.set_x(x1+i);
 		  setPixel(p);
-		  p.set_x(x1-i);
-		  setPixel(p);
-		}
-		p.set_x(x1);
-	  }
 	  line.push_back(p); 
 	}
   }
@@ -364,25 +343,9 @@ Line bkgl::drawLine(Point p1, Point p2)
 	  d2 = pointDistance(xStart, yStart, x2, y2);
 	  float distance = d1/d2;
 	  
-	  Color c = colorInterpolation(cStart, cEnd, distance);
-	  float z = zInterpolation(p1.z, p2.z, distance);
-	  cml::vector4f world = interpolateVectors(worldStart, worldEnd, distance);
-	  Normal normal = interpolateVectors(nStart, nEnd, distance);
-	  Color spec = colorInterpolation(specStart, specEnd, distance);
-	  cml::vector4f light = interpolateVectors(lStart, lEnd, distance);
+	  Point p = interpolatePoint(x1, y1, p1, p2, distance);
 	  
-	  Color newColor = applyLightToColor(light, c, spec);
-	  
-	  Point p(x1, y1, z, 1, newColor, world, normal);
-	  
-	  for (int i=0; i<=lineWidth/2; i++)
-	  {
-		p.set_x(x1+i);
-		setPixel(p);
-		p.set_x(x1-i);
-		setPixel(p);
-	  }
-	  p.set_x(x1);
+	  setPixel(p);
 	  line.push_back(p);
 	}
   }
@@ -726,7 +689,7 @@ void bkgl::bkMultMatrixd(const double* m)
 void bkgl::drawCurMode(Point p)
 {
    //TODO move this set pixle
-  setPixel(p);
+  //setPixel(p);
   
   switch (pointMode)
   {
@@ -838,10 +801,10 @@ void bkgl::bkVertex4f(float x, float y, float z, float w=1)
   //Normal
   Normal n = inverseTransposeModelview*curNormal;
   
-  cml::vector4f world(x,y,z,w);
+  cml::vector4f v(x,y,z,w);
   
   //Modelview
-  cml::vector4f p = M*world;
+  cml::vector4f p = M*v;
   
   //cml::vector4f light = calculateIntensity(p, n);
   //Color specColor = calculateSpcularColor(p, n);

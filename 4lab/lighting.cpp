@@ -476,6 +476,43 @@ void draw()
 	}
 	case 4:
 	{
+	  bk_glMatrixMode(GL_PROJECTION);
+	  bk_glLoadIdentity();
+	  bk_glMatrixMode(GL_MODELVIEW);
+	  bk_glLoadIdentity();
+	  
+	  bk_glEnable(GL_NORMALIZE);
+	  bk_glEnable(GL_LIGHTING);
+	  bk_glEnable(GL_COLOR_MATERIAL);
+	  bk_glEnable(GL_LIGHT0);
+	  float diffuse_color[4] = {1.0,1.0,1.0,1};
+	  float ambient_color[4] = {0.1,0.1,0.1,1};
+	  float position[4] = {0,3,-10,1};
+	  bk_glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse_color);
+	  bk_glLightfv(GL_LIGHT0, GL_AMBIENT, ambient_color);
+	  bk_glLightfv(GL_LIGHT0, GL_POSITION, position);
+	  
+	  bk_glColor3f(1,0,0);
+	  float dp = PI/16; // 16 picked arbitrarily; try other numbers too
+	  bk_glBegin(GL_TRIANGLES);
+	  for(float theta = 0; theta < 2*PI; theta+=dp){
+		for(float phi = 0; phi < PI; phi+=dp){
+		  bk_glNormal3f(4*cos(theta)*sin(phi), 4*cos(phi), 4*sin(theta)*sin(phi));
+		  bk_glVertex3f(cos(theta)*sin(phi), cos(phi), sin(theta)*sin(phi));
+		  bk_glNormal3f(4*cos(theta+dp)*sin(phi), 4*cos(phi), 4*sin(theta+dp)*sin(phi));
+		  bk_glVertex3f(cos(theta+dp)*sin(phi), cos(phi), sin(theta+dp)*sin(phi));
+		  bk_glNormal3f(4*cos(theta+dp)*sin(phi+dp), 4*cos(phi+dp), 4*sin(theta+dp)*sin(phi+dp));
+		  bk_glVertex3f(cos(theta+dp)*sin(phi+dp), cos(phi+dp), sin(theta+dp)*sin(phi+dp));
+		  bk_glNormal3f(4*cos(theta)*sin(phi), 4*cos(phi), 4*sin(theta)*sin(phi));
+		  bk_glVertex3f(cos(theta)*sin(phi), cos(phi), sin(theta)*sin(phi));
+		  bk_glNormal3f(4*cos(theta+dp)*sin(phi+dp), 4*cos(phi+dp), 4*sin(theta+dp)*sin(phi+dp));
+		  bk_glVertex3f(cos(theta+dp)*sin(phi+dp), cos(phi+dp), sin(theta+dp)*sin(phi+dp));
+		  bk_glNormal3f(4*cos(theta)*sin(phi+dp), 4*cos(phi+dp), 4*sin(theta)*sin(phi+dp));
+		  bk_glVertex3f(cos(theta)*sin(phi+dp), cos(phi+dp), sin(theta)*sin(phi+dp));
+		}
+	  }
+	  bk_glEnd();
+	  bk_glDisable(GL_LIGHTING);
 	  break;
 	}
 	case 5:
@@ -594,7 +631,7 @@ void arrow_keys ( int a_keys, int x, int y )
   switch (a_keys)
   {
     case GLUT_KEY_UP:     				// When Up Arrow Is Pressed...
-      drawMode = (drawMode+1)%13;
+      drawMode = (drawMode+1)%5;
 	  reDraw = true;
       display();
       break;

@@ -562,6 +562,8 @@ void bkgl::bkDisable(GLenum cap)
 	  break;
 	case GL_LIGHTING:
 	  gllighting = false;
+	//  for (int i=0; i<8; i++)
+	//	gllights[i].setEnabled(false);
 	  break;
 	case GL_NORMALIZE:
 	  glnormalize = false;
@@ -806,6 +808,9 @@ void bkgl::bkVertex4f(float x, float y, float z, float w=1)
   
   //Normal
   Normal n = inverseTransposeModelview*curNormal;
+  
+  if (glnormalize)
+	n.normalize();
   
   cml::vector4f world(x,y,z,w);
   
