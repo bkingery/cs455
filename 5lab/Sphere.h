@@ -24,17 +24,25 @@ private:
     cml::vector4f specular;
     float reflection;
     
+    float curDist;
+    
 public:
+    Sphere();
     Sphere(cml::vector4f p, float s);
     ~Sphere();
     
-    void setMaterial(cml::vector4f d, cml::vector4f s, float r);
+    void setMaterial(cml::vector4f d, float r, cml::vector4f s);
+    
+    cml::vector4f getPosition();
     
     cml::vector4f getDiffuse();
     cml::vector4f getSpecular();
+    float getSize();
     float getReflection();
     
-    float hit(Ray r);
+    float getCurDist();
+    
+    bool hit(Ray r);
 };
 
 #endif

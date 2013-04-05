@@ -2,6 +2,11 @@
 
 #include "Sphere.h"
 
+Sphere::Sphere()
+{
+	this->size = 0;
+}
+
 Sphere::Sphere(cml::vector4f p, float s)
 {
     this->position = p;
@@ -10,6 +15,8 @@ Sphere::Sphere(cml::vector4f p, float s)
     this->diffuse.set(1,0,0,1);
     this->specular.set(1,1,1,1);
     this->reflection = 0.0;
+	
+	this->curDist = -1;
 }
 
 Sphere::~Sphere() {return;}
@@ -17,7 +24,7 @@ Sphere::~Sphere() {return;}
 /**
  * Sets the material
  */
-void Sphere::setMaterial(cml::vector4f d, cml::vector4f s, float r)
+void Sphere::setMaterial(cml::vector4f d, float r, cml::vector4f s)
 {
     this->diffuse = d;
     this->specular = s;
@@ -27,15 +34,17 @@ void Sphere::setMaterial(cml::vector4f d, cml::vector4f s, float r)
 /**
  * Getters
  */
+cml::vector4f Sphere::getPosition(){return position;}
 cml::vector4f Sphere::getDiffuse(){return diffuse;}
 cml::vector4f Sphere::getSpecular(){return specular;}
+float Sphere::getSize(){return size;}
 float Sphere::getReflection(){return reflection;}
+float Sphere::getCurDist(){return curDist;}
 
 /**
- * If the Sphere is hit return the distance t
- * else return 0
+ * Return true if sphere is hit by ray
  */
-float Sphere::hit(Ray r)
+bool Sphere::hit(Ray r)
 {
     // Intersection of a ray and a sphere
 	cml::vector4f dist = this->position - r.getStart();
@@ -43,14 +52,20 @@ float Sphere::hit(Ray r)
 	float D = B*B - cml::dot(dist, dist) + this->size * this->size;
 	
     if (D < 0.0f)
-        return 0;
+        return false;
 	
     float t0 = B - sqrtf(D);
 	float t1 = B + sqrtf(D);
 	if (t0 > 0.1f )
-		return t0;
+	{
+		this->curDist = t0;
+		return true;
+	}
 	if (t1 > 0.1f )
-		return t1;
+	{
+		this->curDist = t1;
+		return true;
+	}
 	
-    return 0;
+    return false;
 }
