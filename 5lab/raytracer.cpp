@@ -46,7 +46,7 @@ void loadScene()
 	{
 	  Sphere a(cml::vector4f(320.0, 240.0, 0.0, 1), 100.0);
 	  Light l1(cml::vector4f(0.0, 240.0, -100.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
-	  Camera cam(cml::vector4f(0,0,0,1), cml::vector4f(0,0,-1,0));
+	  Camera cam(cml::vector4f(320.0,240.0,0.0,1), cml::vector4f(0,0,1,0));
 	  
 	  scene.addObject(a);
 	  scene.addLight(l1);
@@ -64,7 +64,7 @@ void loadScene()
 	  
 	  Light l1(cml::vector4f(0.0, 240.0, -100.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
 	  Light l2(cml::vector4f(640.0, 240.0, -10000.0, 1), cml::vector4f(0.6, 0.7, 1.0, 2.0));
-	  Camera cam(cml::vector4f(0,0,0,1), cml::vector4f(0,0,-1,0));
+	  Camera cam(cml::vector4f(320.0,240.0,0.0,1), cml::vector4f(0,0,1,0));
 	  
 	  scene.addObject(a);
 	  scene.addObject(b);
@@ -119,7 +119,7 @@ cml::vector4f applyLightToColor(cml::vector4f light, cml::vector4f color, cml::v
 {
   //cml::vector4f newcolor = color;
   //if (gllighting and !glcolormaterial)
-//	newcolor = elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), cml::vector4f(0.8, 0.8, 0.8, 1))+specColor;
+	//return elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), cml::vector4f(0.8, 0.8, 0.8, 1))+specColor;
   
   //if (gllighting and glcolormaterial)
 	return elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), color)+specColor;
@@ -157,7 +157,7 @@ cml::vector4f shootRay(Ray viewRay)
 	  lightRay.setDirection(currentLight.getPosition() - ptHitPoint);
 	  float fLightProjection = cml::dot(lightRay.getDirection(), vNormal);
 	  
-	  if ( fLightProjection <= 0.0f )
+	  if (fLightProjection <= 0.0f)
 		continue;
 	  
 	  float lightDist = cml::dot(lightRay.getDirection(), lightRay.getDirection());
@@ -208,28 +208,18 @@ void trace()
 	  {
 		  //float sampleRatio=0.25f;
 		  
-		  //TODO shoot rays from camera
 		  //Ray viewRay(cml::vector4f(fragmentx, fragmenty, -1000.0f, 1), cml::vector4f(0.0f, 0.0f, 1.0f, 1));
-		  Ray viewRay(cml::vector4f(x, y, -1000.0f, 1), cml::vector4f(0.0f, 0.0f, 1.0f, 1));
+		  Ray viewRay(cml::vector4f((scene.getCamera().getPosition()[0] - SCREENWIDTH / 2.0) + x,
+									(scene.getCamera().getPosition()[1] - SCREENHEIGHT/ 2.0) + y,
+									(scene.getCamera().getPosition()[2] + 1),
+									0),
+									cml::vector4f(0.0f, 0.0f, 1.0f, 1));
 		  cml::vector4f temp = shootRay(viewRay);
-		  
-		  // pseudo photo exposure
-		  //float exposure = -1.00f; // random exposure value. TODO : determine a good value automatically
-		  //temp[0] = (1.0f - expf(temp[0] * exposure));
-		  //temp[1] =  (1.0f - expf(temp[1] * exposure));
-		  //temp[2] = (1.0f - expf(temp[2] * exposure));
 
-		  //output += sampleRatio * temp;
 		  output += temp;
 	  }
-	  // gamma correction
-	  //output[0] = srgbEncode(output[0]);
-	  //output[1] = srgbEncode(output[1]);
-	  //output[2] = srgbEncode(output[2]);
-
 	  //TODO set the raster
 	  setPixel(x, y, output);
-	  //imageFile.put((unsigned char)min(output.blue*255.0f,255.0f)).put((unsigned char)min(output.green*255.0f, 255.0f)).put((unsigned char)min(output.red*255.0f, 255.0f));
 	}
   }
 }
