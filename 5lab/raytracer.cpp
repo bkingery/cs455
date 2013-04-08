@@ -5,6 +5,8 @@
 #include <GL/glut.h>   // The GL Utility Toolkit (Glut) Header
 #include <iostream>
 
+#include <limits>
+
 #include "Scene.h"
 
 #define SCREENHEIGHT 480
@@ -44,8 +46,11 @@ void loadScene()
   {
 	case 0:
 	{
-	  Sphere a(cml::vector4f(320.0, 240.0, 0.0, 1), 100.0);
-	  Light l1(cml::vector4f(0.0, 240.0, -100.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
+	  Sphere a(cml::vector4f(320.0, 240.0, 125.0, 1), 100.0);
+	  Light l1(cml::vector4f(0.0, 240.0, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
+	  l1.setDiffuse(cml::vector4f(1,1,1,1));
+	  //Light l2(cml::vector4f(640.0, 240.0, -10000.0, 1), cml::vector4f(0.6, 0.7, 1.0, 2.0));
+	  //l2.setDiffuse(cml::vector4f(1,1,1,1));
 	  Camera cam(cml::vector4f(320.0,240.0,0.0,1), cml::vector4f(0,0,1,0));
 	  
 	  scene.addObject(a);
@@ -55,15 +60,18 @@ void loadScene()
 	}
 	case 1:
 	{
-	  Sphere a(cml::vector4f(233.0, 290.0, 0.0, 1), 100.0);
+	  Sphere a(cml::vector4f(233.0, 290.0, 125.0, 1), 100.0);
+	  Sphere b(cml::vector4f(407.0, 290.0, 125.0, 1), 100.0);
+	  Sphere c(cml::vector4f(320.0, 140.0, 125.0, 1), 100.0);
 	  a.setMaterial(cml::vector4f(1.0, 1.0, 0.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
-	  Sphere b(cml::vector4f(407.0, 290.0, 0.0, 1), 100.0);
 	  b.setMaterial(cml::vector4f(0.0, 1.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
-	  Sphere c(cml::vector4f(320.0, 140.0, 0.0, 1), 100.0);
 	  c.setMaterial(cml::vector4f(1.0, 0.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
 	  
-	  Light l1(cml::vector4f(0.0, 240.0, -100.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
-	  Light l2(cml::vector4f(640.0, 240.0, -10000.0, 1), cml::vector4f(0.6, 0.7, 1.0, 2.0));
+	  Light l1(cml::vector4f(0.0, 240.0, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
+	  Light l2(cml::vector4f(640.0, 240.0, 1.0, 1), cml::vector4f(0.6, 0.7, 1.0, 2.0));
+	  l1.setDiffuse(cml::vector4f(1,1,1,1));
+	  l2.setDiffuse(cml::vector4f(1,1,1,1));
+	  
 	  Camera cam(cml::vector4f(320.0,240.0,0.0,1), cml::vector4f(0,0,1,0));
 	  
 	  scene.addObject(a);
@@ -82,17 +90,23 @@ void loadScene()
 Sphere getClosestHitObject(Ray r)
 {
   vector<Sphere> objects = scene.getObjects();
-  float t = -1;
+  float t = std::numeric_limits<float>::infinity();
+  
   Sphere s;
   for (int i = 0; i< objects.size(); i++)
   {
 	Sphere temp = objects[i];
-	if (temp.hit(r) && (t == -1 || temp.getCurDist() < t))
+	if (temp.hit(r) && temp.getCurDist() < t)
+	{
+	  t = temp.getCurDist();
 	  s = temp;
+	}
   }
   return s;
 }
 
+/**
+ */
 bool inShadow(Ray lightRay, float lightDist)
 {
   //use this in hit to make sure the object isn't beyond the light
@@ -115,83 +129,61 @@ cml::vector4f elementwise_mult(const cml::vector4f& v1, const cml::vector4f& v2)
 
 /**
  */
-cml::vector4f applyLightToColor(cml::vector4f light, cml::vector4f color, cml::vector4f specColor)
-{
-  //cml::vector4f newcolor = color;
-  //if (gllighting and !glcolormaterial)
-	//return elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), cml::vector4f(0.8, 0.8, 0.8, 1))+specColor;
-  
-  //if (gllighting and glcolormaterial)
-	return elementwise_mult(light + cml::vector4f(0.2, 0.2, 0.2, 0), color)+specColor;
-  
-  //return newcolor;
-}
-
-/**
- */
-cml::vector4f shootRay(Ray viewRay)
+cml::vector4f shootRay(Ray viewRay, float coef, int level)
 {
   cml::vector4f output(0.0f, 0.0f, 0.0f, 1.0f); 
-  float coef = 1.0f;
-  int level = 0;
-  do 
-  {
-	Sphere currentSphere = getClosestHitObject(viewRay);
-	if (currentSphere.getSize() <= 0)
-		break;
-	
-	cml::vector4f ptHitPoint  = viewRay.getStart() + currentSphere.getCurDist() * viewRay.getDirection();
-		
-	cml::vector4f vNormal = ptHitPoint - currentSphere.getPosition();
-	vNormal = vNormal.normalize();	//Surface normal
-
-	Ray lightRay;
-	lightRay.setStart(ptHitPoint);
-	
-	vector<Light> lights = scene.getLights();
-	cml::vector4f intensity(0,0,0,0);
-	for (int j = 0; j < lights.size(); j++)
-	{
-	  Light currentLight = lights[j];
-	  
-	  lightRay.setDirection(currentLight.getPosition() - ptHitPoint);
-	  float fLightProjection = cml::dot(lightRay.getDirection(), vNormal);
-	  
-	  if (fLightProjection <= 0.0f)
-		continue;
-	  
-	  float lightDist = cml::dot(lightRay.getDirection(), lightRay.getDirection());
-	  
-	  lightRay.setDirection(lightRay.getDirection().normalize());
-
-	  if (!inShadow(lightRay, lightDist))
-	  {
-		intensity += max(0.0, (double)cml::dot(vNormal, lightRay.getDirection())) //TODO check this
-				  * currentLight.getDiffuse();
-	  }
-	}
-	output += applyLightToColor(intensity, currentSphere.getDiffuse(), cml::vector4f(0,0,0,0));
-	
-	coef *= currentSphere.getReflection();
-	float reflect = 2.0f * cml::dot(viewRay.getDirection(), vNormal);
-	viewRay.setStart(ptHitPoint);
-	viewRay.setDirection(viewRay.getDirection() - reflect * vNormal);
-	level++;
-  } while ((coef > 0.0f) && (level < 10));
   
-  return output;
+  if ((coef <= 0.0f) || (level > 10))
+	return output;
+  
+  Sphere currentSphere = getClosestHitObject(viewRay);
+  if (currentSphere.getSize() <= 0)
+	return output;
+  
+  cml::vector4f ptHitPoint  = viewRay.getStart() + currentSphere.getCurDist() * viewRay.getDirection();
+	  
+  cml::vector4f vNormal = ptHitPoint - currentSphere.getPosition();
+  vNormal = vNormal.normalize();	//Surface normal
+
+  Ray lightRay;
+  lightRay.setStart(ptHitPoint);
+  
+  vector<Light> lights = scene.getLights();
+  cml::vector4f intensity(0,0,0,0);
+  for (int j=0; j < lights.size(); j++)
+  {
+	Light currentLight = lights[j];
+	
+	lightRay.setDirection(currentLight.getPosition() - ptHitPoint);
+	float lightDist = cml::dot(lightRay.getDirection(), lightRay.getDirection());
+	lightRay.setDirection(lightRay.getDirection().normalize());
+	
+	if (!inShadow(lightRay, lightDist))
+	{
+	  intensity += max(0.0, (double)cml::dot(lightRay.getDirection(), vNormal))
+				* coef
+				* currentLight.getDiffuse();
+	}
+  }
+  output += elementwise_mult(intensity, currentSphere.getDiffuse());//+specColor;
+  
+  coef *= currentSphere.getReflection();
+  float reflect = 2.0f * cml::dot(viewRay.getDirection(), vNormal);
+  viewRay.setStart(ptHitPoint);
+  viewRay.setDirection(viewRay.getDirection() - reflect * vNormal);
+  level++;
+  
+  return elementwise_mult(intensity + coef * shootRay(viewRay, coef, level),
+						  currentSphere.getDiffuse());
 }
 
 /**
  */
 void setPixel(int x, int y, cml::vector4f color)
 { 
-  //if (isInScreen(p) && isInViewport(p) && checkzbuffer(p))
-  {
-	raster[((y*SCREENWIDTH) + x)*3 + 0] = color[0];
-	raster[((y*SCREENWIDTH) + x)*3 + 1] = color[1];
-	raster[((y*SCREENWIDTH) + x)*3 + 2] = color[2];
-  }
+  raster[((y*SCREENWIDTH) + x)*3 + 0] = color[0];
+  raster[((y*SCREENWIDTH) + x)*3 + 1] = color[1];
+  raster[((y*SCREENWIDTH) + x)*3 + 2] = color[2];
 }
 
 /**
@@ -213,12 +205,12 @@ void trace()
 									(scene.getCamera().getPosition()[1] - SCREENHEIGHT/ 2.0) + y,
 									(scene.getCamera().getPosition()[2] + 1),
 									0),
-									cml::vector4f(0.0f, 0.0f, 1.0f, 1));
-		  cml::vector4f temp = shootRay(viewRay);
+									cml::vector4f(0.0f, 0.0f, 1.0f, 0));
+		  cml::vector4f temp = shootRay(viewRay, 1.0f, 0);
 
 		  output += temp;
 	  }
-	  //TODO set the raster
+	  //set the raster
 	  setPixel(x, y, output);
 	}
   }

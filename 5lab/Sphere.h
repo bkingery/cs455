@@ -3,6 +3,7 @@
 #define __SPHERE_H
 
 #include <cml/cml.h>
+#include <limits>
 
 #include "Ray.h"
 
