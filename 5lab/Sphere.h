@@ -7,14 +7,6 @@
 
 #include "Ray.h"
 
-//struct Material
-//{
-//    Color diffuse;
-//    float reflection;
-//    Color specular;
-//    //float power;
-//};
-
 class Sphere
 {
 private:
