@@ -12,13 +12,13 @@ private:
     cml::vector4f ambient;
     cml::vector4f specular;
     cml::vector4f position;
-    cml::vector4f intensity;
+    //cml::vector4f intensity;
     
     bool enabled;
     
 public:    
     Light(){return;};
-    Light(cml::vector4f p, cml::vector4f i) : position(p), intensity(i) {return;}
+    Light(cml::vector4f p, cml::vector4f d) : position(p), diffuse(d) {return;}
     ~Light(){return;};
     
     void setEnabled(bool e){this->enabled = e;};

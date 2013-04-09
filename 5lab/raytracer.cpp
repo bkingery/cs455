@@ -48,9 +48,7 @@ void loadScene()
 	{
 	  Sphere a(cml::vector4f(320.0, 240.0, 125.0, 1), 100.0);
 	  Light l1(cml::vector4f(0.0, 240.0, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
-	  l1.setDiffuse(cml::vector4f(1,1,1,1));
-	  //Light l2(cml::vector4f(640.0, 240.0, -10000.0, 1), cml::vector4f(0.6, 0.7, 1.0, 2.0));
-	  //l2.setDiffuse(cml::vector4f(1,1,1,1));
+	  //l1.setDiffuse(cml::vector4f(1,1,1,1));
 	  Camera cam(cml::vector4f(320.0,240.0,0.0,1), cml::vector4f(0,0,1,0));
 	  
 	  scene.addObject(a);
@@ -69,10 +67,80 @@ void loadScene()
 	  
 	  Light l1(cml::vector4f(0.0, 240.0, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
 	  Light l2(cml::vector4f(640.0, 240.0, 1.0, 1), cml::vector4f(0.6, 0.7, 1.0, 2.0));
-	  l1.setDiffuse(cml::vector4f(1,1,1,1));
-	  l2.setDiffuse(cml::vector4f(1,1,1,1));
 	  
 	  Camera cam(cml::vector4f(320.0,240.0,0.0,1), cml::vector4f(0,0,1,0));
+	  
+	  scene.addObject(a);
+	  scene.addObject(b);
+	  scene.addObject(c);
+	  scene.addLight(l1);
+	  scene.addLight(l2);
+	  scene.setCamera(cam);
+	  break;
+	}
+	case 2:
+	{
+	  Sphere a(cml::vector4f(233.0, 290.0, 125.0, 1), 100.0);
+	  Sphere b(cml::vector4f(407.0, 290.0, 125.0, 1), 100.0);
+	  Sphere c(cml::vector4f(320.0, 140.0, 125.0, 1), 100.0);
+	  a.setMaterial(cml::vector4f(1.0, 1.0, 0.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  b.setMaterial(cml::vector4f(0.0, 1.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  c.setMaterial(cml::vector4f(1.0, 0.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  
+	  Light l1(cml::vector4f(0.0, 240.0, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
+	  Light l2(cml::vector4f(640.0, 240.0, 1.0, 1), cml::vector4f(0.6, 0.7, 1.0, 2.0));
+	  l1.setSpecular(cml::vector4f(1,1,1,1));
+	  l2.setSpecular(cml::vector4f(0.6, 0.7, 1.0, 2.0));
+	  
+	  Camera cam(cml::vector4f(320.0,240.0,0.0,1), cml::vector4f(0,0,1,0));
+	  
+	  scene.addObject(a);
+	  scene.addObject(b);
+	  scene.addObject(c);
+	  scene.addLight(l1);
+	  scene.addLight(l2);
+	  scene.setCamera(cam);
+	  break;
+	}
+	case 3:
+	{
+	  Sphere a(cml::vector4f(233.0, 290.0, 125.0, 1), 100.0);
+	  Sphere b(cml::vector4f(407.0, 290.0, 125.0, 1), 100.0);
+	  Sphere c(cml::vector4f(320.0, 140.0, 125.0, 1), 100.0);
+	  a.setMaterial(cml::vector4f(1.0, 1.0, 0.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  b.setMaterial(cml::vector4f(0.0, 1.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  c.setMaterial(cml::vector4f(1.0, 0.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  
+	  Light l1(cml::vector4f(100.0, 300.0, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
+	  Light l2(cml::vector4f(640.0, 240.0, 1.0, 1), cml::vector4f(0.1, 0.1, 0.1, 2.0));
+	  l1.setSpecular(cml::vector4f(1,1,1,1));
+	  l2.setSpecular(cml::vector4f(0.1, 0.1, 0.1, 2.0));
+	  
+	  Camera cam(cml::vector4f(320.0,240.0,0.0,1), cml::vector4f(0,0,1,0));
+	  
+	  scene.addObject(a);
+	  scene.addObject(b);
+	  scene.addObject(c);
+	  scene.addLight(l1);
+	  scene.addLight(l2);
+	  scene.setCamera(cam);
+	  break;
+	}
+	case 4:
+	{
+	  Sphere a(cml::vector4f(233.0, 290.0, 125.0, 1), 100.0);
+	  Sphere b(cml::vector4f(407.0, 290.0, 125.0, 1), 100.0);
+	  Sphere c(cml::vector4f(320.0, 140.0, 125.0, 1), 100.0);
+	  a.setMaterial(cml::vector4f(1.0, 1.0, 0.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  b.setMaterial(cml::vector4f(0.0, 1.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  c.setMaterial(cml::vector4f(1.0, 0.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  
+	  Light l1(cml::vector4f(100.0, 300.0, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
+	  Light l2(cml::vector4f(640.0, 240.0, 1.0, 1), cml::vector4f(0.1, 0.1, 0.1, 2.0));
+	  l1.setSpecular(cml::vector4f(1,1,1,1));
+	  l2.setSpecular(cml::vector4f(0.1, 0.1, 0.1, 2.0));
+	  
+	  Camera cam(cml::vector4f(320,240,0,1), cml::vector4f(0,0,1,0));
 	  
 	  scene.addObject(a);
 	  scene.addObject(b);
@@ -150,11 +218,14 @@ cml::vector4f shootRay(Ray viewRay, float coef, int level)
   
   vector<Light> lights = scene.getLights();
   cml::vector4f intensity(0,0,0,0);
+  cml::vector4f specColor(0,0,0,0);
   for (int j=0; j < lights.size(); j++)
   {
 	Light currentLight = lights[j];
 	
 	lightRay.setDirection(currentLight.getPosition() - ptHitPoint);
+	float fLightProjection = cml::dot(lightRay.getDirection(), vNormal);
+	
 	float lightDist = cml::dot(lightRay.getDirection(), lightRay.getDirection());
 	lightRay.setDirection(lightRay.getDirection().normalize());
 	
@@ -163,9 +234,17 @@ cml::vector4f shootRay(Ray viewRay, float coef, int level)
 	  intensity += max(0.0, (double)cml::dot(lightRay.getDirection(), vNormal))
 				* coef
 				* currentLight.getDiffuse();
+	  
+	  if (fLightProjection > 0)
+	  {
+		cml::vector4f halfway = ((currentLight.getPosition() - ptHitPoint).normalize() + cml::vector4f(0,0,1,0)).normalize();
+		specColor += max(0.0, (double)pow(cml::dot(vNormal, halfway), currentSphere.getReflection()))
+				  * elementwise_mult(currentSphere.getSpecular(), currentLight.getSpecular());
+	  }
 	}
   }
-  output += elementwise_mult(intensity, currentSphere.getDiffuse());//+specColor;
+  
+  output += elementwise_mult(intensity, currentSphere.getDiffuse());
   
   coef *= currentSphere.getReflection();
   float reflect = 2.0f * cml::dot(viewRay.getDirection(), vNormal);
@@ -174,7 +253,8 @@ cml::vector4f shootRay(Ray viewRay, float coef, int level)
   level++;
   
   return elementwise_mult(intensity + coef * shootRay(viewRay, coef, level),
-						  currentSphere.getDiffuse());
+						  currentSphere.getDiffuse())
+						+ coef * specColor;
 }
 
 /**
@@ -195,20 +275,19 @@ void trace()
 	for (int x=0; x < SCREENWIDTH; x++)
 	{
 	  cml::vector4f output(0.0f, 0.0f, 0.0f, 1.0f);
-	  //for (float fragmentx = float(x); fragmentx < x + 1.0f; fragmentx += 0.5f)
-	  //for (float fragmenty = float(y); fragmenty < y + 1.0f; fragmenty += 0.5f)
+	  for (float fragmentx = float(x); fragmentx < x + 1.0f; fragmentx += 0.5f)
+	  for (float fragmenty = float(y); fragmenty < y + 1.0f; fragmenty += 0.5f)
 	  {
-		  //float sampleRatio=0.25f;
+		  float sampleRatio=0.25f;
 		  
-		  //Ray viewRay(cml::vector4f(fragmentx, fragmenty, -1000.0f, 1), cml::vector4f(0.0f, 0.0f, 1.0f, 1));
-		  Ray viewRay(cml::vector4f((scene.getCamera().getPosition()[0] - SCREENWIDTH / 2.0) + x,
-									(scene.getCamera().getPosition()[1] - SCREENHEIGHT/ 2.0) + y,
-									(scene.getCamera().getPosition()[2] + 1),
+		  Ray viewRay(cml::vector4f((scene.getCamera().getPosition()[0] - SCREENWIDTH / 2.0) + fragmentx,
+									(scene.getCamera().getPosition()[1] - SCREENHEIGHT/ 2.0) + fragmenty,
+									(scene.getCamera().getPosition()[2]),
 									0),
-									cml::vector4f(0.0f, 0.0f, 1.0f, 0));
+									scene.getCamera().getDirection());
 		  cml::vector4f temp = shootRay(viewRay, 1.0f, 0);
 
-		  output += temp;
+		  output += sampleRatio*temp;
 	  }
 	  //set the raster
 	  setPixel(x, y, output);
