@@ -48,7 +48,7 @@ void loadScene()
 	{
 	  Sphere a(cml::vector4f(320.0, 240.0, 125, 0), 100.0);
 	  Light l1(cml::vector4f(0.0, 240.0, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
-	  Camera cam(cml::vector4f(320.0,240.0,0,1), cml::vector4f(320.0, 240.0, 125.0, 0), cml::vector4f(0,1,0,0));
+	  Camera cam(cml::vector4f(320, 240, 0, 1), cml::vector4f(320.0, 240.0, 125.0, 0), cml::vector4f(0,1,0,0));
 	  
 	  scene.addObject(a);
 	  scene.addLight(l1);
@@ -139,7 +139,79 @@ void loadScene()
 	  l1.setSpecular(cml::vector4f(1,1,1,1));
 	  l2.setSpecular(cml::vector4f(0.1, 0.1, 0.1, 2.0));
 	  
-	  Camera cam(cml::vector4f(320.0,240.0,20,1), cml::vector4f(320.0, 240.0, 125.0, 0), cml::vector4f(0,1,0,0));
+	  Camera cam(cml::vector4f(600,300,0,1), cml::vector4f(320.0, 240.0, 125.0, 0), cml::vector4f(0,1,0,0));
+	  
+	  scene.addObject(a);
+	  scene.addObject(b);
+	  scene.addObject(c);
+	  scene.addLight(l1);
+	  scene.addLight(l2);
+	  scene.setCamera(cam);
+	  break;
+	}
+	case 5:
+	{
+	  Sphere a(cml::vector4f(233.0, 290.0, 125.0, 1), 100.0);
+	  Sphere b(cml::vector4f(407.0, 290.0, 125.0, 1), 100.0);
+	  Sphere c(cml::vector4f(320.0, 140.0, 125.0, 1), 100.0);
+	  a.setMaterial(cml::vector4f(1.0, 1.0, 0.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  b.setMaterial(cml::vector4f(0.0, 1.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  c.setMaterial(cml::vector4f(1.0, 0.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  
+	  Light l1(cml::vector4f(100.0, 300.0, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
+	  Light l2(cml::vector4f(640.0, 240.0, 1.0, 1), cml::vector4f(0.1, 0.1, 0.1, 2.0));
+	  l1.setSpecular(cml::vector4f(1,1,1,1));
+	  l2.setSpecular(cml::vector4f(0.1, 0.1, 0.1, 2.0));
+	  
+	  Camera cam(cml::vector4f(600,300,125,1), cml::vector4f(320.0, 240.0, 125.0, 0), cml::vector4f(0,1,0,0));
+	  
+	  scene.addObject(a);
+	  scene.addObject(b);
+	  scene.addObject(c);
+	  scene.addLight(l1);
+	  scene.addLight(l2);
+	  scene.setCamera(cam);
+	  break;
+	}
+	case 6:
+	{
+	  Sphere a(cml::vector4f(233.0, 290.0, 125.0, 1), 100.0);
+	  Sphere b(cml::vector4f(407.0, 290.0, 125.0, 1), 100.0);
+	  Sphere c(cml::vector4f(320.0, 140.0, 125.0, 1), 100.0);
+	  a.setMaterial(cml::vector4f(1.0, 1.0, 0.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  b.setMaterial(cml::vector4f(0.0, 1.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  c.setMaterial(cml::vector4f(1.0, 0.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  
+	  Light l1(cml::vector4f(100.0, 300.0, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
+	  Light l2(cml::vector4f(640.0, 240.0, 1.0, 1), cml::vector4f(0.1, 0.1, 0.1, 2.0));
+	  l1.setSpecular(cml::vector4f(1,1,1,1));
+	  l2.setSpecular(cml::vector4f(0.1, 0.1, 0.1, 2.0));
+	  
+	  Camera cam(cml::vector4f(600,300,250,1), cml::vector4f(320.0, 240.0, 125.0, 0), cml::vector4f(0,1,0,0));
+	  
+	  scene.addObject(a);
+	  scene.addObject(b);
+	  scene.addObject(c);
+	  scene.addLight(l1);
+	  scene.addLight(l2);
+	  scene.setCamera(cam);
+	  break;
+	}
+	case 7:
+	{
+	  Sphere a(cml::vector4f(233.0, 290.0, 125.0, 1), 100.0);
+	  Sphere b(cml::vector4f(407.0, 290.0, 125.0, 1), 100.0);
+	  Sphere c(cml::vector4f(320.0, 140.0, 125.0, 1), 100.0);
+	  a.setMaterial(cml::vector4f(1.0, 1.0, 0.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  b.setMaterial(cml::vector4f(0.0, 1.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  c.setMaterial(cml::vector4f(1.0, 0.0, 1.0, 1.0), 0.5, cml::vector4f(1,1,1,1));
+	  
+	  Light l1(cml::vector4f(100.0, 500, 1.0, 1), cml::vector4f(2.0, 2.0, 2.0, 2.0));
+	  Light l2(cml::vector4f(640.0, 240.0, 1.0, 1), cml::vector4f(0.1, 0.1, 0.1, 2.0));
+	  l1.setSpecular(cml::vector4f(1,1,1,1));
+	  l2.setSpecular(cml::vector4f(0.1, 0.1, 0.1, 2.0));
+	  
+	  Camera cam(cml::vector4f(600,600,0,1), cml::vector4f(320.0, 240.0, 125.0, 0), cml::vector4f(0,1,0,0));
 	  
 	  scene.addObject(a);
 	  scene.addObject(b);
@@ -269,19 +341,17 @@ void setPixel(int x, int y, cml::vector4f color)
  */
 Ray computeCameraRay(int x, int y)
 {
-  float nX = (x/SCREENWIDTH) - 0.5;
-  float nY = (y/SCREENHEIGHT) - 0.5;
-  
   Camera cam = scene.getCamera();
   
-  cml::vector4f imagePoint = -x * cam.getRight()
-						   + y * cam.getUp()
-						   + cam.getPosition();
+  cml::vector4f imagePoint = -(x-SCREENWIDTH/2.0) * cam.getRight()
+						   + (y-SCREENHEIGHT/2.0) * cam.getUp()
+						   + cam.getPosition()
 						   + cam.getDirection();
   
-  cml::vector4f raydir = imagePoint.normalize() - cam.getPosition();
+  cml::vector4f raydir = imagePoint - cam.getPosition();
   
-  return Ray(cam.getPosition(), raydir);
+  return Ray(imagePoint, cam.getDirection()); //orthographic
+  //return Ray(cam.getPosition(), raydir.normalize()); //crazy fisheye
 }
 
 /**
@@ -293,8 +363,8 @@ void trace()
 	for (int x=0; x < SCREENWIDTH; x++)
 	{
 	  cml::vector4f output(0.0f, 0.0f, 0.0f, 1.0f);
-	  //for (float fragmentx = float(x); fragmentx < x + 1.0f; fragmentx += 0.5f)
-	  //for (float fragmenty = float(y); fragmenty < y + 1.0f; fragmenty += 0.5f)
+	  for (float fragmentx = float(x); fragmentx < x + 1.0f; fragmentx += 0.5f)
+	  for (float fragmenty = float(y); fragmenty < y + 1.0f; fragmenty += 0.5f)
 	  {
 		float sampleRatio=0.25f;
 		
@@ -303,11 +373,11 @@ void trace()
 	  //							(scene.getCamera().getPosition()[2]),
 	  //							0),
 	  //							scene.getCamera().getDirection());
-		Ray viewRay = computeCameraRay(x, y);
+		Ray viewRay = computeCameraRay(fragmentx, fragmenty);
 		
 		cml::vector4f temp = shootRay(viewRay, 1.0f, 0);
 		
-		output += temp;//*sampleRatio;
+		output += temp*sampleRatio;
 	  }
 	  //set the raster
 	  setPixel(x, y, output);
@@ -383,11 +453,11 @@ void arrow_keys ( int a_keys, int x, int y )
 {
   switch ( a_keys ) {
     case GLUT_KEY_UP:     				// When Up Arrow Is Pressed...
-      drawMode = (drawMode+1)%5;
+      drawMode = (drawMode+1)%8;
       display();
       break;
     case GLUT_KEY_DOWN:               	// When Down Arrow Is Pressed...
-      if ((drawMode=drawMode-1) < 0)drawMode=4;
+      if ((drawMode=drawMode-1) < 0)drawMode=7;
       display();
       break;
     default:
